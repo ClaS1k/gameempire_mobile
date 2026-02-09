@@ -54,9 +54,8 @@ const SignInScreen = ({ navigation }) => {
     }, []);
 
     return (
-        <SafeAreaView style={{ backgroundColor: '#1E1E1E' }}>
-            <StatusBar />
             <View style={styles.background}>
+                <StatusBar />
                 <Image style={styles.logoImg} source={require("../assets/images/place_logo.png")} />
                 <View style={styles.placeControls}>
                     <TouchableOpacity style={styles.editPlace}>
@@ -101,7 +100,6 @@ const SignInScreen = ({ navigation }) => {
                     <Text style={styles.signInButtonText}>Войти</Text>
                 </TouchableOpacity>
             </View>
-        </SafeAreaView>
     );
 }
 

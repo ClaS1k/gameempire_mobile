@@ -12,6 +12,7 @@ import {
     ActivityIndicator,
     Dimensions,
     Alert,
+    Pressable,
     Touchable
 } from 'react-native';
 
@@ -23,7 +24,12 @@ import appConfig from "../appConfig";
 
 const PlaceSelectorScreen = ({ navigation }) => {
     const selectPlace = () => {
+        console.log(1);
         navigation.navigate("SignIn");
+    }
+
+    const logmessage = () =>{
+        console.log("hello!")
     }
 
     const loadFonts = async () => {
@@ -65,29 +71,28 @@ const PlaceSelectorScreen = ({ navigation }) => {
     
     const PlacesNavigation = () => {
         return (
-            <View style={styles.navigationBar}>
-                <TouchableOpacity style={styles.navigationBarButton}>
-                    <Image style={styles.navigationBarButtonIcon} source={require("../assets/images/icon_list_highlighted.png")} />
+            <View style={navigation_styles.navigationBar}>
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={logmessage}>
+                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_list_highlighted.png")} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.navigationBarButton}>
-                    <Image style={styles.navigationBarButtonIcon} source={require("../assets/images/icon_map.png")} />
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={logmessage}>
+                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_map.png")} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.navigationBarButton}>
-                    <Image style={styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={logmessage}>
+                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
                 </TouchableOpacity>
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={{ backgroundColor: '#1E1E1E' }}>
+        <View style={styles.background}>
             <StatusBar />
-            <View style={styles.background}>
-                <PlacesList />
-                
-                <PlacesNavigation />
-            </View>
-        </SafeAreaView>
+
+            <PlacesList />
+            
+            <PlacesNavigation />
+        </View>
     );
 }
 
@@ -197,7 +202,10 @@ const styles = StyleSheet.create({
         right: 17,
         color: "rgba(255, 255, 255, .75)",
         textAlign: "right"
-    },
+    }
+});
+
+const navigation_styles = StyleSheet.create({
     navigationBar: {
         width: windowWidth - 50,
         height: 50,

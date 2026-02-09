@@ -7,6 +7,14 @@ import SignInScreen from "./screens/SignIn";
 import SignUpScreen from "./screens/SignUp";
 import ReviewsUnauthScreen from "./screens/ReviewsUnauth";
 import HomeScreen from "./screens/Home";
+import NewsScreen from "./screens/News";
+import NewsViewerScreen from "./screens/NewsViewer";
+import ProfileScreen from "./screens/Profile";
+import QrScreen from "./screens/Qr";
+import ReservationsScreen from "./screens/Reservations";
+import ReviewsAuthScreen from "./screens/ReviewsAuth";
+import TopUpScreen from "./screens/TopUp";
+import SettingsScreen from "./screens/Settings";
 
 const Stack = createNativeStackNavigator();
 
@@ -36,6 +44,38 @@ const App = () => {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
+        />
+        <Stack.Screen
+          name="News"
+          component={NewsScreen}
+        />
+        <Stack.Screen
+          name="NewsViewer"
+          component={NewsViewerScreen}
+        />
+        <Stack.Screen
+          name="Profile"
+          component={ProfileScreen}
+        />
+        <Stack.Screen
+          name="Qr"
+          component={QrScreen}
+        />
+        <Stack.Screen
+          name="Reservations"
+          component={ReservationsScreen}
+        />
+        <Stack.Screen
+          name="ReviewsAuth"
+          component={ReviewsAuthScreen}
+        />
+        <Stack.Screen
+          name="TopUp"
+          component={TopUpScreen}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>
