@@ -20,7 +20,6 @@ import * as Font from 'expo-font';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import appConfig from "../appConfig";
-// import { ScrollView } from 'react-native/types_generated/index';
 
 const PlaceSelectorScreen = ({ navigation }) => {
     const selectPlace = () => {

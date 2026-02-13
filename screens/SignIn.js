@@ -38,6 +38,14 @@ const SignInScreen = ({ navigation }) => {
         navigation.navigate("SignUp");
     }
 
+    const goSelection = () => {
+        navigation.navigate("PlaceSelector");
+    }
+
+    const goReviews = () => {
+        navigation.navigate("ReviewsUnauth");
+    }
+
     const loadFonts = async () => {
         await Font.loadAsync({
             'Formular': require('../assets/fonts/Formular.ttf'),
@@ -58,13 +66,14 @@ const SignInScreen = ({ navigation }) => {
                 <StatusBar />
                 <Image style={styles.logoImg} source={require("../assets/images/place_logo.png")} />
                 <View style={styles.placeControls}>
-                    <TouchableOpacity style={styles.editPlace}>
+                <Text style={styles.placeName}>Game Empire 1</Text>
+
+                    <TouchableOpacity style={styles.editPlace} onPress={goSelection}>
                         <Image style={styles.editPlaceImg} source={require("../assets/images/icon_edit.png")} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.ratesPlace}>
-                        <Image style={styles.ratesPlaceImg} source={require("../assets/images/icon_star_alt.png")} />
+                    <TouchableOpacity style={styles.ratesPlace} onPress={goReviews}>
+                        <Image style={styles.ratesPlaceImg} source={require("../assets/images/icon_star.png")} />
                     </TouchableOpacity>
-                    <Text style={styles.placeName}>Game Empire 1</Text>
                 </View>
 
                 <Text style={styles.usernameTitle}>Логин:</Text>

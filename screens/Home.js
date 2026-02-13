@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Text,
     View,
@@ -10,7 +10,7 @@ import {
     TextInput,
     ActivityIndicator,
     Dimensions,
-    Alert
+    Modal
 } from 'react-native';
 
 import * as Font from 'expo-font';
@@ -19,6 +19,31 @@ import * as Font from 'expo-font';
 import appConfig from "../appConfig";
 
 const HomeScreen = ({ navigation }) => {
+    const [upcomingReservationVisible, setUpcomingReservationVisible] = useState(false);
+    const [productsVisible, setProductsVisible] = useState(false);
+    const [tarrifsVisible, setTarrifsVisible] = useState(false);
+
+    const modalPropsReservation = useMemo(() => ({
+        animationType: "slide",
+        transparent: true,
+        visible: upcomingReservationVisible,
+        onRequestClose: () => setUpcomingReservationVisible(false),
+    }), [upcomingReservationVisible]);
+
+    const modalPropsProducts = useMemo(() => ({
+        animationType: "slide",
+        transparent: true,
+        visible: productsVisible,
+        onRequestClose: () => setProductsVisible(false),
+    }), [productsVisible]);
+
+    const modalPropsTarrifs = useMemo(() => ({
+        animationType: "slide",
+        transparent: true,
+        visible: tarrifsVisible,
+        onRequestClose: () => setTarrifsVisible(false),
+    }), [tarrifsVisible]);
+
     const goTopUp = () => {
         navigation.navigate("TopUp");
     }
@@ -28,7 +53,11 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const goReviews = () => {
-        navigation.navigate("ReviewsAuthScreen");
+        navigation.navigate("ReviewsAuth");
+    }
+
+    const goHosts = () => {
+        navigation.navigate("ReviewsAuth");
     }
 
     const goNews = () => {
@@ -102,15 +131,15 @@ const HomeScreen = ({ navigation }) => {
     const AdditionalServices = () => {
         return (
             <View style={styles.additionalServicesContainer}>
-                <TouchableOpacity style={styles.additionalServicesButton}>
+                <TouchableOpacity style={styles.additionalServicesButton} onPress={goReviews}>
                     <Image style={styles.additionalServicesButtonIcon} source={require("../assets/images/icon_reviews.png")} />
                     <Text style={styles.additionalServicesButtonText}>Отзывы</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.additionalServicesButton}>
+                <TouchableOpacity style={styles.additionalServicesButton} onPress={() => setTarrifsVisible(!tarrifsVisible)}>
                     <Image style={styles.additionalServicesButtonIcon} source={require("../assets/images/icon_tarrifs.png")} />
                     <Text style={styles.additionalServicesButtonText}>Тарифы</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.additionalServicesButton}>
+                <TouchableOpacity style={styles.additionalServicesButton} onPress={() => setProductsVisible(!productsVisible)}>
                     <Image style={styles.additionalServicesButtonIcon} source={require("../assets/images/icon_products.png")} />
                     <Text style={styles.additionalServicesButtonText}>Пакеты</Text>
                 </TouchableOpacity>
@@ -161,6 +190,69 @@ const HomeScreen = ({ navigation }) => {
         );
     }
 
+    const UpcomingReservationPopUp = () => {
+        return (
+            <Modal {...modalPropsReservation}>
+                <View style={styles.popupView}>
+                    <Text style={styles.popupViewTitle}>Предстоящая бронь</Text>
+                    <View style={styles.reservationsPopupDate}>
+                        <Image style={styles.reservationsPopupDateIcon} source={require("../assets/images/icon_calendar.png")} />
+                        <Text style={styles.reservationsPopupDateText}>28.01.2026 17:45</Text>
+                    </View>
+                    <View style={styles.reservationsPopupHost}>
+                        <Image style={styles.reservationsPopupHostIcon} source={require("../assets/images/icon_host_big.png")} />
+                        <Text style={styles.reservationsPopupHostText}>Gaming 1, PC 12</Text>
+                    </View>
+                    <View style={styles.reservationsPopupProduct}>
+                        <Image style={styles.reservationsPopupProductIcon} source={require("../assets/images/icon_products.png")} />
+                        <Text style={styles.reservationsPopupProductText}>5 часов</Text>
+                    </View>
+                    <View style={styles.reservationsPopupPayment}>
+                        <Image style={styles.reservationsPopupPaymentIcon} source={require("../assets/images/icon_payment_method.png")} />
+                        <Text style={styles.reservationsPopupPaymentText}>С баланса</Text>
+                    </View>
+
+                    <View style={styles.reservationsPopupDeclineWarning}>
+                        <Image style={styles.reservationsPopupDeclineWarningIcon} source={require("../assets/images/icon_info.png")} />
+                        <Text style={styles.reservationsPopupDeclineWarningText}>При отмене брони средства не вернутся</Text>
+                    </View>
+
+                    <TouchableOpacity style={styles.reservationsPopupDeclineButton}>
+                        <Text style={styles.reservationsPopupDeclineButtonText}>Отменить</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => setUpcomingReservationVisible(!upcomingReservationVisible)}>
+                        <Text style={styles.popupViewCloseButtonText}>Закрыть</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+        )
+    }
+
+    const ProductsPopUp = () => {
+        return (
+            <Modal {...modalPropsProducts}>
+                <View style={styles.popupView}>
+                    <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => setProductsVisible(!productsVisible)}>
+                        <Text style={styles.popupViewCloseButtonText}>Закрыть</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+        )
+    }
+
+    const TarrifsPopUp = () => {
+        return (
+            <Modal {...modalPropsTarrifs}>
+                <View style={styles.popupView}>
+                    <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => setTarrifsVisible(!tarrifsVisible)}>
+                        <Text style={styles.popupViewCloseButtonText}>Закрыть</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+        )
+    }
+
     return (
             <View style={styles.background}>
                 <StatusBar />
@@ -173,6 +265,10 @@ const HomeScreen = ({ navigation }) => {
                 <PinnedNews /> 
            
                 <Navigation />
+
+                <UpcomingReservationPopUp />
+                <ProductsPopUp />
+                <TarrifsPopUp />
             </View>
     );
 }
@@ -466,6 +562,192 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         borderRadius: 12
+    },
+    popupView:{
+        width:"100%",
+        height:windowHeight - 200,
+        position:"absolute",
+        bottom:0,
+        left:0,
+        backgroundColor:"#2C2C2C",
+        borderTopLeftRadius:12,
+        borderTopRightRadius:12
+    },
+    popupViewTitle:{
+        width:"100%",
+        textAlign:"center",
+        fontFamily:"Formular-Medium",
+        fontSize:20,
+        color:"#fff",
+        position:"absolute",
+        top:20,
+        left:0
+    },
+    popupViewCloseButton:{
+        width:windowWidth - 40,
+        height:50,
+        position:"absolute",
+        bottom:25,
+        left:20,
+        borderRadius:12,
+        backgroundColor:"#A915FF"
+    },
+    popupViewCloseButtonText:{
+        width:"100%",
+        textAlign:"center",
+        color:"#fff",
+        fontFamily:"Formular-Bold",
+        position:'absolute',
+        left:0,
+        top:15
+    },  
+    reservationsPopupDate:{
+        width:(windowWidth - 60) / 2,
+        height: (windowWidth - 60) / 2,
+        position:"absolute",
+        top:64,
+        left:20,
+        backgroundColor:"#383838",
+        borderRadius:12
+    },
+    reservationsPopupDateIcon:{
+        width: (windowWidth - 220) / 2,
+        height: (windowWidth - 220) / 2,
+        objectFit:"contain",
+        position:"absolute",
+        top:20,
+        left: (((windowWidth - 60) / 2) / 2) - ((windowWidth - 220) / 4)
+    },
+    reservationsPopupDateText:{
+        width:"100%",
+        textAlign:"center",
+        fontFamily:"Formular-Medium",
+        fontSize:14,
+        color:"#fff",
+        position:"absolute",
+        bottom:20,
+        left:0
+    },
+    reservationsPopupHost:{
+        width: (windowWidth - 60) / 2,
+        height: (windowWidth - 60) / 2,
+        position: "absolute",
+        top: 64,
+        right: 20,
+        backgroundColor: "#383838",
+        borderRadius: 12
+    },
+    reservationsPopupHostIcon:{
+        width: (windowWidth - 220) / 2,
+        height: (windowWidth - 220) / 2,
+        objectFit: "contain",
+        position: "absolute",
+        top: 20,
+        left: (((windowWidth - 60) / 2) / 2) - ((windowWidth - 220) / 4)
+    },
+    reservationsPopupHostText:{
+        width: "100%",
+        textAlign: "center",
+        fontFamily: "Formular-Medium",
+        fontSize: 14,
+        color: "#fff",
+        position: "absolute",
+        bottom: 20,
+        left: 0
+    },
+    reservationsPopupProduct:{
+        width:windowWidth - 40,
+        height:50,
+        position:"absolute",
+        top: 64 + (windowWidth - 60) / 2 + 20,
+        left:20,
+        borderRadius:12,
+        backgroundColor:"#383838"
+    },
+    reservationsPopupProductIcon:{
+        width:28,
+        height:28,
+        position:"absolute",
+        top:11,
+        left:11,
+        objectFit:"contain"
+    },  
+    reservationsPopupProductText:{
+        width:"100%",
+        textAlign:"center",
+        color:"#fff",
+        fontFamily:"Formular-Medium",
+        position:"absolute",
+        top:15,
+        left:0
+    },
+    reservationsPopupPayment:{
+        width: windowWidth - 40,
+        height: 50,
+        position: "absolute",
+        top: 64 + (windowWidth - 60) / 2 + 20 + 50 + 20,
+        left: 20,
+        borderRadius: 12,
+        backgroundColor: "#383838"
+    },
+    reservationsPopupPaymentIcon:{
+        width: 28,
+        height: 28,
+        position: "absolute",
+        top: 11,
+        left: 11,
+        objectFit: "contain"
+    },
+    reservationsPopupPaymentText:{
+        width: "100%",
+        textAlign: "center",
+        color: "#fff",
+        fontFamily: "Formular-Medium",
+        position: "absolute",
+        top: 15,
+        left: 0
+    },
+    reservationsPopupDeclineButton:{
+        width: windowWidth - 40,
+        height: 50,
+        position: "absolute",
+        bottom: 95,
+        left: 20,
+        borderRadius: 12,
+        backgroundColor: "#A915FF"
+    },
+    reservationsPopupDeclineButtonText:{
+        width: "100%",
+        textAlign: "center",
+        color: "#fff",
+        fontFamily: "Formular-Bold",
+        position: 'absolute',
+        left: 0,
+        top: 15
+    },
+    reservationsPopupDeclineWarning:{
+        width:"100%",
+        height:14,
+        position:"absolute",
+        left:0,
+        bottom:155
+    },
+    reservationsPopupDeclineWarningIcon:{
+        width:12,
+        height:12,
+        position:"absolute",
+        top:2,
+        left: (windowWidth / 2) - 140
+    },
+    reservationsPopupDeclineWarningText:{
+        width:"100%",
+        textAlign:'center',
+        position:"absolute",
+        top:0,
+        left:0,
+        fontFamily:"Formular",
+        fontSize:12,
+        color:"#fff"
     }
 });
 
