@@ -14,14 +14,39 @@ import {
 } from 'react-native';
 
 import * as Font from 'expo-font';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import appConfig from "../appConfig";
 
 const HomeScreen = ({ navigation }) => {
+    const [userToken, setUserToken] = useState(false);
+    // false - токен еще не загружен или его нет
+
+    const [username, setUsername] = useState(false);
+    const [userPhone, setUserPhone] = useState(false);
+
+    const [userBalance, setUserBalance] = useState(0);
+    const [userPoints, setUserPoints] = useState(0);
+    const [availableTime, setAvailableTime] = useState(0);
+    const [onlineHost, setOnlineHost] = useState(false);
+
+    const [placeName, setPlaceName] = useState(false);
+    const [placeLogoPath, setPlaceLogoPath] = useState(false);
+
+    const [actualNewsId, setActualNewsId] = useState(0);
+    const [actualNewsTitle, setActualNewsTitle] = useState(false);
+    const [actualNewsSubtitle, setActualNewsSubtitle] = useState(false);
+    const [actualNewsDate, setActualNewsDate] = useState(false);
+    const [actualNewsImagePath, setActualNewsImagePath] = useState(false);
+
     const [upcomingReservationVisible, setUpcomingReservationVisible] = useState(false);
     const [productsVisible, setProductsVisible] = useState(false);
     const [tarrifsVisible, setTarrifsVisible] = useState(false);
+
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [balanceLoading, setBalanceLoading] = useState(false);
+    const [onlineStatusLoading, setOnlineStatusLoading] = useState(false);
+    const [actualNewsLoading, setActualNewsLoading] = useState(false);
 
     const modalPropsReservation = useMemo(() => ({
         animationType: "slide",
@@ -43,6 +68,176 @@ const HomeScreen = ({ navigation }) => {
         visible: tarrifsVisible,
         onRequestClose: () => setTarrifsVisible(false),
     }), [tarrifsVisible]);
+
+    const clearDb = async () => {
+        await AsyncStorage.clear();
+    }
+
+    const getUserTimeFormat = () => {
+        // получает время читабельной строкой
+        if (availableTime < 60) {
+            return "00:00";
+        }
+
+        let mins = parseInt(availableTime / 60);
+        let hrs = parseInt(mins / 60);
+        mins = mins % 60;
+
+        if (mins < 10) {
+            mins = "0" + mins;
+        }
+
+        if (hrs < 10) {
+            hrs = "0" + hrs;
+        }
+
+        return `${hrs}:${mins}`;
+    }
+
+    const getProfile = () => {
+        setProfileLoading(true);
+
+        fetch(appConfig.apiAddress + "profile", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setProfileLoading(false);
+                    } catch {
+                        setProfileLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let user_data = JSON.parse(text);
+                    user_data = user_data.data;
+
+                    setUsername(user_data.username);
+                    setUserPhone(user_data.gizmo_data.phone);
+                    setPlaceName(user_data.place.name);
+                    setPlaceLogoPath(user_data.place.logo_file.adress);
+
+                    setProfileLoading(false);
+                });
+            }
+        });
+    }
+
+    const getBalance = () => {
+        setBalanceLoading(true);
+
+        fetch(appConfig.apiAddress + "balance", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setBalanceLoading(false);
+                    } catch {
+                        setBalanceLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let balance_data = JSON.parse(text);
+
+                    setUserBalance(balance_data.balance);
+                    setUserPoints(balance_data.points);
+                    setAvailableTime(balance_data.available_time);
+
+                    setBalanceLoading(false);
+                });
+            }
+        });
+    }
+
+    const getOnline = () => {
+        setOnlineStatusLoading(true);
+
+        fetch(appConfig.apiAddress + "hosts/currenthost", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setOnlineStatusLoading(false);
+                    } catch {
+                        setOnlineStatusLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let host_data = JSON.parse(text);
+                    host_data = host_data.data;
+                    
+                    if(host_data.is_playing){
+                        setOnlineHost(host_data.host_data.hostname);
+                    }else{
+                        setOnlineHost(false);
+                    }
+
+                    setOnlineStatusLoading(false);
+                });
+            }
+        });
+    }
+
+    const getActualNews = () => {
+        setActualNewsLoading(true);
+
+        fetch(appConfig.apiAddress + "news/last", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setActualNewsLoading(false);
+                    } catch {
+                        setActualNewsLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let news_data = JSON.parse(text);
+                    news_data = news_data.data;
+
+                    setActualNewsId(news_data.id);
+                    setActualNewsTitle(news_data.title);
+                    setActualNewsSubtitle(news_data.subtitle);
+                    setActualNewsDate(news_data.creation_date);
+                    setActualNewsImagePath(news_data.wallpaper_file.adress);
+
+                    setActualNewsLoading(false);
+                });
+            }
+        });
+    }
+
+    const logOut = () => {
+        clearDb();
+        navigation.navigate("PlaceSelector");
+    }
 
     const goTopUp = () => {
         navigation.navigate("TopUp");
@@ -80,8 +275,8 @@ const HomeScreen = ({ navigation }) => {
         return(
             <View style={styles.profileContainer}>
                 <Image style={styles.profileTopIcon} source={require("../assets/images/icon_profile_big.png")} />
-                <Text style={styles.profileTopUsername}>Liberty</Text>
-                <Text style={styles.profileTopPhone}>+7(900)100-00-00</Text>
+                <Text style={styles.profileTopUsername}>{username ? username : "-"}</Text>
+                <Text style={styles.profileTopPhone}>{userPhone ? userPhone : "-"}</Text>
             </View>
         );
     }
@@ -89,11 +284,12 @@ const HomeScreen = ({ navigation }) => {
     const PlaceContainer = () => {
         return(
             <View style={styles.placeContainer}>
-                <Image style={styles.placeContainerLogo} source={require("../assets/images/place_logo.png")} />
-                <Text style={styles.placeContainerName}>Game empire 1</Text>
-                <Text style={styles.placeContainerStatus}>Offline</Text>
+                {profileLoading && placeLogoPath != false ? <ActivityIndicator size="large" color="#fff" style={styles.placeContainerLogoActivityIndicator} /> : <Image style={styles.placeContainerLogo} source={{ uri: placeLogoPath }} />}
+                <Text style={styles.placeContainerName}>{placeName ? placeName : "-"}</Text>
 
-                <TouchableOpacity style={styles.placeContainerLogoutBtn}>
+                {onlineHost == false ? <Text style={styles.placeContainerStatus}>Offline</Text> : <Text style={styles.placeContainerStatusOnline}>{onlineHost}, доступно {getUserTimeFormat()}</Text>}
+
+                <TouchableOpacity style={styles.placeContainerLogoutBtn} onPress={logOut}>
                     <Image style={styles.placeContainerLogoutIcon} source={require("../assets/images/icon_logout.png")} />
                 </TouchableOpacity>
             </View>
@@ -112,14 +308,26 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const BalanceContainer = () => {
+        let points_str = userPoints.toString();
+        let marginLeft = (4 * points_str.length);
+
+        const pointsIconStyles = {
+            width: 14,
+            height: 14,
+            position: "absolute",
+            top: 14,
+            left: "50%",
+            marginLeft: marginLeft
+        };
+
         return(
             <View style={styles.balanceContainer}>
                 <View style={styles.balanceContainerMoney}>
-                    <Text style={styles.balanceContainerMoneyText}>102 ₽</Text>
+                    <Text style={styles.balanceContainerMoneyText}>{userBalance} ₽</Text>
                 </View>
                 <View style={styles.balanceContainerPoints}>
-                    <Text style={styles.balanceContainerPointsText}>84</Text>
-                    <Image style={styles.balanceContainerPointsIcon} source={require("../assets/images/icon_points.png")} />
+                    <Text style={styles.balanceContainerPointsText}>{userPoints}</Text>
+                    <Image style={pointsIconStyles} source={require("../assets/images/icon_points.png")} />
                 </View>
                 <TouchableOpacity style={styles.reservationsContainerButton} onPress={goTopUp}>
                     <Text style={styles.reservationsContainerButtonText}>Пополнить</Text>
@@ -152,20 +360,26 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const PinnedNews = () => {
-        return(
-            <View style={styles.pinnedNewsContainer}>
-                <Image style={styles.pinnedNewsWallpaper} source={require("../assets/images/place_bg.png")} />
-                <View style={styles.pinnedNewsWallpaperMask}>
-                    <Text style={styles.pinnedNewsTitle}>Обновленный список установленных игр</Text>
-                    <Text style={styles.pinnedNewsSubtitle}>Актуальный список предустановленных игр на наших ПК</Text>
-                    <Text style={styles.pinnedNewsDate}>14.01</Text>
-
-                    <TouchableOpacity style={styles.pinnedNewsReadBtn}>
-                        <Text style={styles.pinnedNewsReadBtnText}>Перейти</Text>
-                    </TouchableOpacity>
+        if (!actualNewsLoading && actualNewsId != 0){
+            return(
+                <View style={styles.pinnedNewsContainer}>
+                    <Image style={styles.pinnedNewsWallpaper} source={require("../assets/images/place_bg.png")} />
+                    <View style={styles.pinnedNewsWallpaperMask}>
+                        <Text style={styles.pinnedNewsTitle}>Обновленный список установленных игр</Text>
+                        <Text style={styles.pinnedNewsSubtitle}>Актуальный список предустановленных игр на наших ПК</Text>
+                        <Text style={styles.pinnedNewsDate}>14.01</Text>
+    
+                        <TouchableOpacity style={styles.pinnedNewsReadBtn}>
+                            <Text style={styles.pinnedNewsReadBtnText}>Перейти</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
-        );  
+            );  
+        }else{
+            return(<View style={styles.pinnedNewsContainer}>
+                <ActivityIndicator size="large" color="#fff" style={styles.pinnedNewsContainerActivityIndicator} />
+            </View>);
+        }
     }
 
     const Navigation = () => {
@@ -252,6 +466,26 @@ const HomeScreen = ({ navigation }) => {
             </Modal>
         )
     }
+
+    useEffect(() => {
+        AsyncStorage.getItem("TOKEN").then((value) => {
+            if (value !== null) {
+                setUserToken(value);
+            } else {
+                navigation.navigate("SignIn");
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        if (userToken !== false) {
+            getProfile();
+            getBalance();
+            getActualNews();
+            getOnline();
+
+        }
+    }, [userToken]);
 
     return (
             <View style={styles.background}>
@@ -342,8 +576,15 @@ const styles = StyleSheet.create({
         height:40,
         position:"absolute",
         top:10,
-        left:10,
+        left:12,
         objectFit:"contain"
+    },
+    placeContainerLogoActivityIndicator:{
+        width: 40,
+        height: 40,
+        position: "absolute",
+        top: 12,
+        left: 12
     },
     placeContainerName:{
         fontFamily: "Formular-Medium",
@@ -357,6 +598,14 @@ const styles = StyleSheet.create({
         fontFamily: "Formular-Medium",
         fontSize: 13,
         color: "rgba(255, 255, 255, .7)",
+        position: "absolute",
+        bottom: 10,
+        left: 65
+    },
+    placeContainerStatusOnline: {
+        fontFamily: "Formular-Medium",
+        fontSize: 13,
+        color: "#75F66C",
         position: "absolute",
         bottom: 10,
         left: 65
@@ -445,7 +694,7 @@ const styles = StyleSheet.create({
         right: 0
     },
     balanceContainerPointsText:{
-        width: ((windowWidth - 60) / 4) - 24,
+        width: ((windowWidth - 60) / 4) - 15,
         textAlign: "center",
         fontFamily: "Formular",
         fontSize: 14,
@@ -499,7 +748,17 @@ const styles = StyleSheet.create({
         position:"absolute",
         top: 470 + ((windowWidth - 100) / 4) + 20,
         left: 20,
-        borderRadius:12 
+        borderRadius:12,
+        backgroundColor:"#2C2C2C"
+    },
+    pinnedNewsContainerActivityIndicator:{
+        width:40,
+        height:40,
+        position:"absolute",
+        top:"50%",
+        left:"50%",
+        marginTop:-20,
+        marginLeft:-20
     },
     pinnedNewsWallpaperMask:{
         width:"100%",

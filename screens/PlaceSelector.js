@@ -17,14 +17,46 @@ import {
 } from 'react-native';
 
 import * as Font from 'expo-font';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import appConfig from "../appConfig";
 
 const PlaceSelectorScreen = ({ navigation }) => {
-    const selectPlace = () => {
-        console.log(1);
-        navigation.navigate("SignIn");
+    const [placesList, setPlacesLists] = useState([]);
+
+    const [placesLoading, setPlacesLoading] = useState(false);
+
+    const getPlaces = () => {
+        setPlacesLoading(true);
+
+        fetch(appConfig.apiAddress + "places", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setPlacesLoading(false);
+                    } catch {
+                        setPlacesLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let places_data = JSON.parse(text);
+
+                    setPlacesLists(places_data.data);
+                    setPlacesLoading(false);
+                });
+            }
+        });
+    }
+
+    const selectPlace = (place_id) => {
+        navigation.navigate('SignIn', { place_id: place_id })
     }
 
     const logmessage = () =>{
@@ -42,28 +74,46 @@ const PlaceSelectorScreen = ({ navigation }) => {
         });
     };
 
+    const autoLog = async () => {
+        AsyncStorage.getItem("AUTOLOGIN").then((value) => {
+            if (value !== null) {
+                if(value == "1"){
+                    navigation.navigate("Home");
+                }
+            }
+        });
+    }
+
     useEffect(() => {
         loadFonts();
+
+        autoLog();
+
+        getPlaces();
     }, []);
 
     const PlacesList = () => {
         return (
             <ScrollView style={styles.placesScrollView}>
-                <TouchableOpacity style={styles.placesItem} onPress={selectPlace}>
-                    <Image style={styles.placesItemWallpaper} source={require("../assets/images/place_bg.png")} />
-                    <View style={styles.placesItemWallpaperMask}></View>
+                {placesLoading ? <ActivityIndicator size="large" color="#fff" style={{ marginTop: "100" }} /> : placesList.map((place, index) => {
+                    return (<TouchableOpacity key={place.id} style={styles.placesItem} onPress={() => { selectPlace(place.id)}}>
+                        <Image style={styles.placesItemWallpaper} source={{
+                            uri: place.bg_file.adress
+                        }} />
+                        <View style={styles.placesItemWallpaperMask}></View>
 
-                    <Text style={styles.placesItemName}>Game Empire 1</Text>
-                    <Text style={styles.placesItemDescription}>Комфортная кибер-арена на 55 ПК, разделенная на 5 залов и 3 дополнительные комнаты с PlayStation 5</Text>
-                    <View style={styles.placesItemDistance}>
-                        <Image style={styles.placesItemDistanceIcon} source={require("../assets/images/icon_location.png")} />
-                        <Text style={styles.placesItemDistanceText}>253м</Text>
-                    </View>
-                    <View style={styles.placesItemRate}>
-                        <Image style={styles.placesItemRateIcon} source={require("../assets/images/icon_star_alt.png")} />
-                        <Text style={styles.placesItemRateText}>4.6</Text>
-                    </View>
-                </TouchableOpacity>
+                        <Text style={styles.placesItemName}>{place.name}</Text>
+                        <Text style={styles.placesItemDescription}>{place.description}</Text>
+                        <View style={styles.placesItemDistance}>
+                            <Image style={styles.placesItemDistanceIcon} source={require("../assets/images/icon_location.png")} />
+                            <Text style={styles.placesItemDistanceText}>253м</Text>
+                        </View>
+                        <View style={styles.placesItemRate}>
+                            <Image style={styles.placesItemRateIcon} source={require("../assets/images/icon_star_alt.png")} />
+                            <Text style={styles.placesItemRateText}>{place.rate}</Text>
+                        </View>
+                    </TouchableOpacity>);
+                })}
             </ScrollView>
         );
     }

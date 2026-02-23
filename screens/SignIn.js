@@ -14,14 +14,30 @@ import {
 } from 'react-native';
 
 import * as Font from 'expo-font';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import appConfig from "../appConfig";
 
-const SignInScreen = ({ navigation }) => {
+const SignInScreen = ({ navigation, route }) => {
+    const [placeId, setPlaceId] = useState("");
+
     const [userLogin, setUserLogin] = useState("");
     const [userPassword, setUserPassword] = useState("");
+    const [autoLogin, setAutoLogin] = useState(true);
+
+    const [authLoading, setAuthLoading] = useState(false);
     
+    const setAccountData = async (user_id, token, place_id, autologin) => {
+        await AsyncStorage.setItem('USER_ID', user_id);
+        await AsyncStorage.setItem('TOKEN', token);
+        await AsyncStorage.setItem('PLACE_ID', place_id);
+        await AsyncStorage.setItem('AUTOLOGIN', autologin ? "1" : "0");
+        // AsyncStorage не поддерживает булевы значения
+        // поэтому autologin меняем на строку 0 или 1
+
+        return true;
+    }
+
     const getLoginValue = e => {
         setUserLogin(e.nativeEvent.text.trim());
     }
@@ -30,8 +46,48 @@ const SignInScreen = ({ navigation }) => {
         setUserPassword(e.nativeEvent.text.trim());
     }
 
+    const swithAutologStatus = () => {
+        setAutoLogin(!autoLogin);
+    }
+
     const auth = () => {
-        navigation.navigate("Home");
+        setAuthLoading(true);
+
+        let body = {
+            "username": userLogin,
+            "password": userPassword,
+            "place_id": placeId
+        }
+
+        let xhr = new XMLHttpRequest();
+        let adress = encodeURI(appConfig.apiAddress + "auth");
+        xhr.open('POST', adress, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify(body));
+        xhr.onreadystatechange = async function () {
+            if (xhr.readyState == 4) {
+                if (xhr.status == 202) {
+                    let response = JSON.parse(xhr.responseText);
+
+                    await setAccountData(response.user_id, response.token, placeId, autoLogin);
+
+                    navigation.navigate("Home");
+                } else {
+                    try {
+                        let response = JSON.parse(xhr.responseText);
+
+                        Alert.alert(response.message);
+                        // setErrorMessage(response.message);
+                    } catch {
+                        Alert.alert("Неизвестная ошибка");
+
+                        // setErrorMessage("Неизвестная ошибка");
+                    }
+                }
+
+                setAuthLoading(false);
+            }
+        }
     }
 
     const signUp = () => {
@@ -59,6 +115,8 @@ const SignInScreen = ({ navigation }) => {
     
     useEffect(() => {
         loadFonts();
+        
+        setPlaceId(route.params.place_id);
     }, []);
 
     return (
@@ -94,14 +152,16 @@ const SignInScreen = ({ navigation }) => {
                 />
 
                 <View style={styles.autoLogContainer}>
-                    <Image style={styles.autoLogContainerCheckbox} source={require("../assets/images/checkbox_checked.png")} /> 
                     <Text style={styles.autoLogContainerText}>Входить автоматически</Text>
+                    <TouchableOpacity style={styles.autoLogContainerCheckbox} onPress={swithAutologStatus}>
+                    {autoLogin ? <Image style={styles.autoLogContainerCheckboxIcon} source={require("../assets/images/checkbox_checked.png")} /> : <Image style={styles.autoLogContainerCheckboxIcon} source={require("../assets/images/checkbox_unchecked.png")} />} 
+                    </TouchableOpacity>
                 </View>
 
-                <View style={styles.savePassContainer}>
+                {/* <View style={styles.savePassContainer}>
                     <Image style={styles.savePassContainerCheckbox} source={require("../assets/images/checkbox_unchecked.png")} />
                     <Text style={styles.savePassContainerText}>Сохранить пароль</Text>
-                </View>
+                </View> */}
 
                 <Text style={styles.createAccountLnk} onPress={signUp}>Создать аккаунт</Text>
 
@@ -227,6 +287,13 @@ const styles = StyleSheet.create({
         position:"absolute",
         top:0,
         left:(windowWidth / 2) - 10 - 90
+    },
+    autoLogContainerCheckboxIcon: {
+        width: 20,
+        height: 20,
+        position: "absolute",
+        top: 0,
+        left: 0
     },
     autoLogContainerText:{
         fontFamily: "Formular",

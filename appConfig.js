@@ -1,6 +1,6 @@
 const appConfig = {
-    apiAddress: "http://cgtools.ru/api/",
-    webappAddress: "http://cgtools.ru/",
+    apiAddress: "https://cgtools.ru/api/",
+    webappAddress: "https://cgtools.ru/",
     appVersion: "1"
 }
 
