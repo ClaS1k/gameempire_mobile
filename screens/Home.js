@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Text,
     View,
-    SafeAreaView,
+    Alert,
     StatusBar,
     StyleSheet,
     Image,
@@ -21,6 +21,8 @@ import appConfig from "../appConfig";
 const HomeScreen = ({ navigation }) => {
     const [userToken, setUserToken] = useState(false);
     // false - токен еще не загружен или его нет
+    const [notificationTitle, setNotificationTitle] = useState("Внимание!");
+    const [notificationText, setNotificationText] = useState("Сервисное сообщение.");
 
     const [username, setUsername] = useState(false);
     const [userPhone, setUserPhone] = useState(false);
@@ -39,14 +41,18 @@ const HomeScreen = ({ navigation }) => {
     const [actualNewsDate, setActualNewsDate] = useState(false);
     const [actualNewsImagePath, setActualNewsImagePath] = useState(false);
 
+    const [upcomingReservationsList, setUpcomingReservationsList] = useState(false);
+
     const [upcomingReservationVisible, setUpcomingReservationVisible] = useState(false);
     const [productsVisible, setProductsVisible] = useState(false);
     const [tarrifsVisible, setTarrifsVisible] = useState(false);
+    const [notificationVisible, setNotificationVisible] = useState(false);
 
     const [profileLoading, setProfileLoading] = useState(false);
     const [balanceLoading, setBalanceLoading] = useState(false);
     const [onlineStatusLoading, setOnlineStatusLoading] = useState(false);
     const [actualNewsLoading, setActualNewsLoading] = useState(false);
+    const [upcomingReservationsLoading, setUpcomingReservationsLoading] = useState(false);
 
     const modalPropsReservation = useMemo(() => ({
         animationType: "slide",
@@ -68,6 +74,13 @@ const HomeScreen = ({ navigation }) => {
         visible: tarrifsVisible,
         onRequestClose: () => setTarrifsVisible(false),
     }), [tarrifsVisible]);
+
+    const modalPropsNotification = useMemo(() => ({
+        animationType: "slide",
+        transparent: true,
+        visible: notificationVisible,
+        onRequestClose: () => setNotificationVisible(false),
+    }), [notificationVisible]);
 
     const clearDb = async () => {
         await AsyncStorage.clear();
@@ -108,6 +121,7 @@ const HomeScreen = ({ navigation }) => {
                 return res.text().then(text => {
                     try {
                         let error_data = JSON.parse(text);
+
                         setProfileLoading(false);
                     } catch {
                         setProfileLoading(false);
@@ -198,6 +212,37 @@ const HomeScreen = ({ navigation }) => {
         });
     }
 
+    const getUpcomingReservations = () => {
+        setUpcomingReservationsLoading(true);
+
+        fetch(appConfig.apiAddress + "reservations", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setUpcomingReservationsLoading(false);
+                    } catch {
+                        setUpcomingReservationsLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let reservations_data = JSON.parse(text);
+
+                    setUpcomingReservationsList(reservations_data.data)
+
+                    setUpcomingReservationsLoading(false);
+                });
+            }
+        });
+    }
+
     const getActualNews = () => {
         setActualNewsLoading(true);
 
@@ -234,6 +279,63 @@ const HomeScreen = ({ navigation }) => {
         });
     }
 
+    const deleteReservation = () => {
+        if (upcomingReservationsList === false || upcomingReservationsList === undefined || upcomingReservationsList == null || upcomingReservationsLoading) {
+            // брони по какой-то причине не загружены/загружаются
+            return;
+        }
+
+        if (upcomingReservationsList.length == 0){
+            // у пользователя нет предстоящих броней
+            return;
+        }
+
+        setUpcomingReservationVisible(false);
+        // скрываем поп-ап с предстоящей бронью
+
+        let reservation = upcomingReservationsList[0];
+
+        fetch(appConfig.apiAddress + `reservations/delete/${reservation.id}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                    } catch {
+                        console.log("Network error");
+                    }
+                });
+            } else {
+                getUpcomingReservations();
+            }
+        });
+    }
+
+    const deleteUpcomingReservation = () => {
+        Alert.alert(
+            'Подтверждение',
+            'Вы уверены, что хотите отменить бронь? Если она оплачена - деньги не вернутся.',
+            [
+                {
+                    text: 'Отмена',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Удалить',
+                    onPress: deleteReservation,
+                },
+            ],
+            {
+                cancelable: false
+            }
+        )
+    }
+
     const logOut = () => {
         clearDb();
         navigation.navigate("PlaceSelector");
@@ -252,7 +354,7 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const goHosts = () => {
-        navigation.navigate("ReviewsAuth");
+        navigation.navigate("Hostmap");
     }
 
     const goNews = () => {
@@ -284,7 +386,7 @@ const HomeScreen = ({ navigation }) => {
     const PlaceContainer = () => {
         return(
             <View style={styles.placeContainer}>
-                {profileLoading && placeLogoPath != false ? <ActivityIndicator size="large" color="#fff" style={styles.placeContainerLogoActivityIndicator} /> : <Image style={styles.placeContainerLogo} source={{ uri: placeLogoPath }} />}
+                {(profileLoading && placeLogoPath !== false) ? <ActivityIndicator size="large" color="#fff" style={styles.placeContainerLogoActivityIndicator} /> : <Image style={styles.placeContainerLogo} source={{ uri: placeLogoPath ? placeLogoPath : "" }} />}
                 <Text style={styles.placeContainerName}>{placeName ? placeName : "-"}</Text>
 
                 {onlineHost == false ? <Text style={styles.placeContainerStatus}>Offline</Text> : <Text style={styles.placeContainerStatusOnline}>{onlineHost}, доступно {getUserTimeFormat()}</Text>}
@@ -297,14 +399,53 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const ReservationsContainer = () => {
-        return(
-            <View style={styles.reservationsContainer}>
-                <Text style={styles.reservationsContainerText}>Нет бронирований</Text>
-                <TouchableOpacity style={styles.reservationsContainerButton} onPress={goReservations}>
-                    <Text style={styles.reservationsContainerButtonText}>Забронировать</Text>
-                </TouchableOpacity>
-            </View>
-        );
+        if (upcomingReservationsList === false || upcomingReservationsList === undefined || upcomingReservationsList == null ||  upcomingReservationsLoading){
+            // предстоящие брони не загружены - возвращвем стандартный блок
+            return(
+                <View style={styles.reservationsContainer}>
+                    <Text style={styles.reservationsContainerText}>Нет бронирований</Text>
+                    <TouchableOpacity style={styles.reservationsContainerButton} onPress={goReservations}>
+                        <Text style={styles.reservationsContainerButtonText}>Забронировать</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }else{
+            if (upcomingReservationsList.length == 0){
+                // брони загружены, но у пользователя их нет
+
+                return (
+                    <View style={styles.reservationsContainer}>
+                        <Text style={styles.reservationsContainerText}>Нет бронирований</Text>
+                        <TouchableOpacity style={styles.reservationsContainerButton} onPress={goReservations}>
+                            <Text style={styles.reservationsContainerButtonText}>Забронировать</Text>
+                        </TouchableOpacity>
+                    </View>
+                );
+            }else{
+                let reservation = upcomingReservationsList[0];
+
+                let reservation_full_date = reservation.date;
+
+                let date_splitted = reservation_full_date.split("T");
+                // date_splitted[0] - Дата бронирования с годом
+                // date_splitted[1] - время бронирования
+
+                let display_date = date_splitted[0].split("-");
+                display_date = `${display_date[2]}.${display_date[1]}`;
+
+                let display_time = date_splitted[1].split(":");
+                display_time = `${display_time[0]}:${display_time[1]}`;
+
+                return (
+                    <View style={styles.reservationsContainer}>
+                        <Text style={styles.reservationsContainerTextLighted}>Бронь {display_date} на {display_time}</Text>
+                        <TouchableOpacity style={styles.reservationsContainerButton} onPress={() => setUpcomingReservationVisible(!upcomingReservationVisible)}>
+                            <Text style={styles.reservationsContainerButtonText}>Перейти</Text>
+                        </TouchableOpacity>
+                    </View>
+                );
+            }
+        }
     }
 
     const BalanceContainer = () => {
@@ -323,7 +464,7 @@ const HomeScreen = ({ navigation }) => {
         return(
             <View style={styles.balanceContainer}>
                 <View style={styles.balanceContainerMoney}>
-                    <Text style={styles.balanceContainerMoneyText}>{userBalance} ₽</Text>
+                    <Text style={styles.balanceContainerMoneyText}>{parseInt(userBalance)} ₽</Text>
                 </View>
                 <View style={styles.balanceContainerPoints}>
                     <Text style={styles.balanceContainerPointsText}>{userPoints}</Text>
@@ -351,7 +492,7 @@ const HomeScreen = ({ navigation }) => {
                     <Image style={styles.additionalServicesButtonIcon} source={require("../assets/images/icon_products.png")} />
                     <Text style={styles.additionalServicesButtonText}>Пакеты</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.additionalServicesButton}>
+                <TouchableOpacity style={styles.additionalServicesButton} onPress={goHosts}>
                     <Image style={styles.additionalServicesButtonIcon} source={require("../assets/images/icon_hosts.png")} />
                     <Text style={styles.additionalServicesButtonText}>Места</Text>
                 </TouchableOpacity>
@@ -382,6 +523,28 @@ const HomeScreen = ({ navigation }) => {
         }
     }
 
+    const showNotificationPopup = (title, text) => {
+        setNotificationTitle(title);
+        setNotificationText(text);
+
+        setNotificationVisible(!notificationVisible);
+    }
+
+    const NotificationPopup = () => {
+        return (
+            <Modal {...modalPropsNotification}>
+                <View style={styles.popupView}>
+                    <Text style={styles.notificationTitle}>{notificationTitle}</Text>
+                    <Text style={styles.notificationText}>{notificationText}</Text>
+
+                    <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => setNotificationVisible(!notificationVisible)}>
+                        <Text style={styles.popupViewCloseButtonText}>Закрыть</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+        )
+    }
+
     const Navigation = () => {
         return (
             <View style={navigation_styles.navigationBar}>
@@ -405,25 +568,64 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const UpcomingReservationPopUp = () => {
+        if (upcomingReservationsList === false || upcomingReservationsList === undefined || upcomingReservationsList == null || upcomingReservationsLoading) {
+            return;
+        }
+
+        if (upcomingReservationsList.length == 0){
+            return;
+        }
+
+        let date_str = `-`;
+        let host_str = `-`;
+        let product_str = `-`;
+        let payment_method_str = `-`;
+
+        let reservation = upcomingReservationsList[0];
+
+        // форматируем дату
+        let reservation_full_date = reservation.date;  
+
+        let date_splitted = reservation_full_date.split("T");
+        // date_splitted[0] - Дата бронирования с годом
+        // date_splitted[1] - время бронирования
+
+        let display_date = date_splitted[0].split("-");
+        let display_time = date_splitted[1].split(":");
+        
+        date_str = `${display_date[2]}.${display_date[1]}.${display_date[0]} ${display_time[0]}:${display_time[1]}`;
+
+        // форматируем хост
+        host_str = `${reservation.host.hostgroup}, ${reservation.host.name}`;
+
+        // форматируем пакет
+        product_str = reservation.app_data.product_name === false ? "Не предусмотрен" : reservation.app_data.product_name;
+
+        if (reservation.app_data.payment_method === false){
+            payment_method_str = `Не оплачено`;
+        }else{
+            payment_method_str = reservation.app_data.payment_method == 0 ? "С баланса" : "Баллами"; 
+        }
+
         return (
             <Modal {...modalPropsReservation}>
                 <View style={styles.popupView}>
                     <Text style={styles.popupViewTitle}>Предстоящая бронь</Text>
                     <View style={styles.reservationsPopupDate}>
                         <Image style={styles.reservationsPopupDateIcon} source={require("../assets/images/icon_calendar.png")} />
-                        <Text style={styles.reservationsPopupDateText}>28.01.2026 17:45</Text>
+                        <Text style={styles.reservationsPopupDateText}>{date_str}</Text>
                     </View>
                     <View style={styles.reservationsPopupHost}>
                         <Image style={styles.reservationsPopupHostIcon} source={require("../assets/images/icon_host_big.png")} />
-                        <Text style={styles.reservationsPopupHostText}>Gaming 1, PC 12</Text>
+                        <Text style={styles.reservationsPopupHostText}>{host_str}</Text>
                     </View>
                     <View style={styles.reservationsPopupProduct}>
                         <Image style={styles.reservationsPopupProductIcon} source={require("../assets/images/icon_products.png")} />
-                        <Text style={styles.reservationsPopupProductText}>5 часов</Text>
+                        <Text style={styles.reservationsPopupProductText}>{product_str}</Text>
                     </View>
                     <View style={styles.reservationsPopupPayment}>
                         <Image style={styles.reservationsPopupPaymentIcon} source={require("../assets/images/icon_payment_method.png")} />
-                        <Text style={styles.reservationsPopupPaymentText}>С баланса</Text>
+                        <Text style={styles.reservationsPopupPaymentText}>{payment_method_str}</Text>
                     </View>
 
                     <View style={styles.reservationsPopupDeclineWarning}>
@@ -431,7 +633,7 @@ const HomeScreen = ({ navigation }) => {
                         <Text style={styles.reservationsPopupDeclineWarningText}>При отмене брони средства не вернутся</Text>
                     </View>
 
-                    <TouchableOpacity style={styles.reservationsPopupDeclineButton}>
+                    <TouchableOpacity style={styles.reservationsPopupDeclineButton} onPress={deleteUpcomingReservation}>
                         <Text style={styles.reservationsPopupDeclineButtonText}>Отменить</Text>
                     </TouchableOpacity>
 
@@ -468,7 +670,7 @@ const HomeScreen = ({ navigation }) => {
     }
 
     useEffect(() => {
-        AsyncStorage.getItem("TOKEN").then((value) => {
+        AsyncStorage.getItem("TOKEN").then((value) => { 
             if (value !== null) {
                 setUserToken(value);
             } else {
@@ -478,12 +680,12 @@ const HomeScreen = ({ navigation }) => {
     }, []);
 
     useEffect(() => {
-        if (userToken !== false) {
+        if(userToken !== false && userToken !== null){
             getProfile();
             getBalance();
             getActualNews();
             getOnline();
-
+            getUpcomingReservations();
         }
     }, [userToken]);
 
@@ -503,6 +705,7 @@ const HomeScreen = ({ navigation }) => {
                 <UpcomingReservationPopUp />
                 <ProductsPopUp />
                 <TarrifsPopUp />
+                <NotificationPopup />
             </View>
     );
 }
@@ -642,6 +845,16 @@ const styles = StyleSheet.create({
         fontFamily:"Formular",
         color:"rgba(255, 255, 255, .6)",
         fontSize:14
+    },
+    reservationsContainerTextLighted:{
+        width: "100%",
+        textAlign: "center",
+        position: "absolute",
+        top: 12,
+        left: 0,
+        fontFamily: "Formular",
+        color: "#fff",
+        fontSize: 13
     },
     reservationsContainerButton:{
         width:"100%",
@@ -1007,6 +1220,26 @@ const styles = StyleSheet.create({
         fontFamily:"Formular",
         fontSize:12,
         color:"#fff"
+    },
+    notificationTitle:{
+        width:"100%",
+        textAlign:"center",
+        fontFamily:"Formular-Medium",
+        fontSize:18,
+        position:"absolute",
+        top:10,
+        left:0,
+        color:"#fff"
+    },
+    notificationText:{
+        width:windowWidth - 40,
+        height: windowHeight - 360,
+        textAlign:"center",
+        color:"#fff",
+        fontFamily:"Formular",
+        position:"absolute",
+        left:20,
+        top:60
     }
 });
 

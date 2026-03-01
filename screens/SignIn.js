@@ -28,9 +28,9 @@ const SignInScreen = ({ navigation, route }) => {
     const [authLoading, setAuthLoading] = useState(false);
     
     const setAccountData = async (user_id, token, place_id, autologin) => {
-        await AsyncStorage.setItem('USER_ID', user_id);
-        await AsyncStorage.setItem('TOKEN', token);
-        await AsyncStorage.setItem('PLACE_ID', place_id);
+        await AsyncStorage.setItem('USER_ID', user_id.toString());
+        await AsyncStorage.setItem('TOKEN', token.toString());
+        await AsyncStorage.setItem('PLACE_ID', place_id.toString());
         await AsyncStorage.setItem('AUTOLOGIN', autologin ? "1" : "0");
         // AsyncStorage не поддерживает булевы значения
         // поэтому autologin меняем на строку 0 или 1
