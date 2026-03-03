@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Text,
     View,
+    ScrollView,
     Alert,
     StatusBar,
     StyleSheet,
@@ -32,6 +33,7 @@ const HomeScreen = ({ navigation }) => {
     const [availableTime, setAvailableTime] = useState(0);
     const [onlineHost, setOnlineHost] = useState(false);
 
+    const [placeId, setPlaceId] = useState(false);
     const [placeName, setPlaceName] = useState(false);
     const [placeLogoPath, setPlaceLogoPath] = useState(false);
 
@@ -40,6 +42,8 @@ const HomeScreen = ({ navigation }) => {
     const [actualNewsSubtitle, setActualNewsSubtitle] = useState(false);
     const [actualNewsDate, setActualNewsDate] = useState(false);
     const [actualNewsImagePath, setActualNewsImagePath] = useState(false);
+
+    const [productsList, setProductsList] = useState(false);
 
     const [upcomingReservationsList, setUpcomingReservationsList] = useState(false);
 
@@ -53,6 +57,7 @@ const HomeScreen = ({ navigation }) => {
     const [onlineStatusLoading, setOnlineStatusLoading] = useState(false);
     const [actualNewsLoading, setActualNewsLoading] = useState(false);
     const [upcomingReservationsLoading, setUpcomingReservationsLoading] = useState(false);
+    const [productsLoading, setProductsLoading] = useState(false);
 
     const modalPropsReservation = useMemo(() => ({
         animationType: "slide",
@@ -136,6 +141,7 @@ const HomeScreen = ({ navigation }) => {
                     setUserPhone(user_data.gizmo_data.phone);
                     setPlaceName(user_data.place.name);
                     setPlaceLogoPath(user_data.place.logo_file.adress);
+                    setPlaceId(user_data.place.id);
 
                     setProfileLoading(false);
                 });
@@ -171,6 +177,37 @@ const HomeScreen = ({ navigation }) => {
                     setAvailableTime(balance_data.available_time);
 
                     setBalanceLoading(false);
+                });
+            }
+        });
+    }
+
+    const getProducts = () => {
+        setProductsLoading(true);
+
+        fetch(appConfig.apiAddress + "balance/products", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setProductsLoading(false);
+                    } catch {
+                        setProductsLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let products_data = JSON.parse(text);
+
+                    setProductsList(products_data);
+
+                    setProductsLoading(false);
                 });
             }
         });
@@ -279,6 +316,28 @@ const HomeScreen = ({ navigation }) => {
         });
     }
 
+    const disableHost = () => {
+        fetch(appConfig.apiAddress + `hosts/logout`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                    } catch {
+                        console.log("Network error");
+                    }
+                });
+            } else {
+                getOnline();
+            }
+        });
+    }
+
     const deleteReservation = () => {
         if (upcomingReservationsList === false || upcomingReservationsList === undefined || upcomingReservationsList == null || upcomingReservationsLoading) {
             // брони по какой-то причине не загружены/загружаются
@@ -350,27 +409,11 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const goReviews = () => {
-        navigation.navigate("ReviewsAuth");
+        navigation.navigate("ReviewsAuth", { place_id: placeId });
     }
 
     const goHosts = () => {
         navigation.navigate("Hostmap");
-    }
-
-    const goNews = () => {
-        navigation.navigate("News");
-    }
-
-    const goSettings = () => {
-        navigation.navigate("Settings");
-    }
-
-    const goProfile = () => {
-        navigation.navigate("Profile");
-    }
-
-    const goQr = () => {
-        navigation.navigate("Qr");
     }
 
     const TopProfile = () => {
@@ -390,6 +433,10 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.placeContainerName}>{placeName ? placeName : "-"}</Text>
 
                 {onlineHost == false ? <Text style={styles.placeContainerStatus}>Offline</Text> : <Text style={styles.placeContainerStatusOnline}>{onlineHost}, доступно {getUserTimeFormat()}</Text>}
+
+                {onlineHost == false ? false : <TouchableOpacity style={styles.placeContainerDisableHostBtn} onPress={disableHost}>
+                    <Image style={styles.placeContainerDisableHostIcon} source={require("../assets/images/icon_disable_host.png")} />
+                </TouchableOpacity>}
 
                 <TouchableOpacity style={styles.placeContainerLogoutBtn} onPress={logOut}>
                     <Image style={styles.placeContainerLogoutIcon} source={require("../assets/images/icon_logout.png")} />
@@ -531,9 +578,17 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const NotificationPopup = () => {
+        let touchY;
+
         return (
             <Modal {...modalPropsNotification}>
-                <View style={styles.popupView}>
+                <View style={styles.popupView}
+                    onTouchStart={e => touchY = e.nativeEvent.pageY}
+                    onTouchEnd={e => {
+                        if (touchY - e.nativeEvent.pageY < 20) {
+                            setNotificationVisible(false);
+                        }
+                    }}>
                     <Text style={styles.notificationTitle}>{notificationTitle}</Text>
                     <Text style={styles.notificationText}>{notificationText}</Text>
 
@@ -546,6 +601,26 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const Navigation = () => {
+        const goNews = () => {
+            navigation.navigate("News");
+        }
+
+        const goSettings = () => {
+            navigation.navigate("Settings");
+        }
+
+        const goProfile = () => {
+            navigation.navigate("Profile");
+        }
+
+        const goQr = () => {
+            navigation.navigate("Qr");
+        }
+
+        const goHome = () => {
+            navigation.navigate("Home");
+        }
+
         return (
             <View style={navigation_styles.navigationBar}>
                 <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goNews}>
@@ -554,7 +629,7 @@ const HomeScreen = ({ navigation }) => {
                 <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goSettings}>
                     <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
                 </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goHome}>
                     <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_home_highlighted.png")} />
                 </TouchableOpacity>
                 <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goProfile}>
@@ -568,6 +643,8 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const UpcomingReservationPopUp = () => {
+        let touchY;
+
         if (upcomingReservationsList === false || upcomingReservationsList === undefined || upcomingReservationsList == null || upcomingReservationsLoading) {
             return;
         }
@@ -609,7 +686,13 @@ const HomeScreen = ({ navigation }) => {
 
         return (
             <Modal {...modalPropsReservation}>
-                <View style={styles.popupView}>
+                <View style={styles.popupView} 
+                    onTouchStart={e => touchY = e.nativeEvent.pageY}
+                    onTouchEnd={e => {
+                        if (touchY - e.nativeEvent.pageY < -50) {
+                            setUpcomingReservationVisible(false);
+                        }
+                    }}>
                     <Text style={styles.popupViewTitle}>Предстоящая бронь</Text>
                     <View style={styles.reservationsPopupDate}>
                         <Image style={styles.reservationsPopupDateIcon} source={require("../assets/images/icon_calendar.png")} />
@@ -646,9 +729,46 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const ProductsPopUp = () => {
+        let touchY;
+
         return (
             <Modal {...modalPropsProducts}>
-                <View style={styles.popupView}>
+                <View style={styles.popupView} 
+                    onTouchStart={e => touchY = e.nativeEvent.pageY}
+                    onTouchEnd={e => {
+                        if (touchY - e.nativeEvent.pageY < -50) {
+                            setProductsVisible(false);
+                        }
+                    }}>
+                    <Text style={styles.productsPopupTitle}>Пакеты времени</Text>
+
+                    <ScrollView style={styles.productScrollView}>
+                        {(productsLoading || productsList === false || productsList === null || productsList === undefined) ? <ActivityIndicator size="large" color="#fff" style={{ marginTop: "100" }} /> : productsList.map((product, index) => {
+                            if (product.usedSeconds != 0){
+                                // пакет начат
+                                const progress_scale_style={
+                                    width: `${parseInt(100 - (100 * (product.usedSeconds / product.totalSeconds)))}%`,
+                                    height:"100%",
+                                    position:"absolute",
+                                    top:0,
+                                    left:0,
+                                    borderRadius:12,
+                                    backgroundColor:"rgba(0, 255, 0, .1)"
+                                };
+
+                                return (<View key={index} style={styles.productScrollViewActivatedItem}>
+                                    <View style={progress_scale_style}></View>
+                                    <Text style={styles.productScrollViewActivatedItemText}>{product.name}</Text>
+                                </View>);
+                            }else{
+                                // пакет не использовался
+                                return (<View key={index} style={styles.productScrollViewItem}>
+                                    <Text style={styles.productScrollViewItemText}>{product.name}</Text>
+                                </View>);
+                            }
+                        })}
+                    </ScrollView>
+
                     <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => setProductsVisible(!productsVisible)}>
                         <Text style={styles.popupViewCloseButtonText}>Закрыть</Text>
                     </TouchableOpacity>
@@ -658,9 +778,17 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const TarrifsPopUp = () => {
+        let touchY;
+
         return (
             <Modal {...modalPropsTarrifs}>
-                <View style={styles.popupView}>
+                <View style={styles.popupView} 
+                    onTouchStart={e => touchY = e.nativeEvent.pageY}
+                    onTouchEnd={e => {
+                        if (touchY - e.nativeEvent.pageY < -50) {
+                            setTarrifsVisible(false);
+                        }
+                    }}>
                     <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => setTarrifsVisible(!tarrifsVisible)}>
                         <Text style={styles.popupViewCloseButtonText}>Закрыть</Text>
                     </TouchableOpacity>
@@ -683,6 +811,7 @@ const HomeScreen = ({ navigation }) => {
         if(userToken !== false && userToken !== null){
             getProfile();
             getBalance();
+            getProducts();
             getActualNews();
             getOnline();
             getUpcomingReservations();
@@ -826,6 +955,20 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: 0,
         right: 0
+    },
+    placeContainerDisableHostBtn:{
+        width: 40,
+        height: 40,
+        position: "absolute",
+        top: 10,
+        right: 55
+    },
+    placeContainerDisableHostIcon:{
+        width: 38,
+        height: 38,
+        position: "absolute",
+        top: 1,
+        right: 1
     },
     reservationsContainer:{
         width:(windowWidth - 60) / 2,
@@ -1220,6 +1363,60 @@ const styles = StyleSheet.create({
         fontFamily:"Formular",
         fontSize:12,
         color:"#fff"
+    },
+    productsPopupTitle: {
+        width: "100%",
+        textAlign: "center",
+        fontFamily: "Formular-Medium",
+        fontSize: 18,
+        position: "absolute",
+        top: 10,
+        left: 0,
+        color: "#fff"
+    },
+    productScrollView:{
+        width:"100%",
+        height:windowHeight - 200 - 50 - 90,
+        position:"absolute",
+        top:50,
+        left:0
+    },
+    productScrollViewItem: {
+        width:windowWidth - 40,
+        height:50,
+        marginLeft:20,
+        marginBottom:20,
+        borderRadius:12,
+        backgroundColor:"#383838"
+    },
+    productScrollViewItemText: {
+        width:"100%",
+        textAlign:"center",
+        color:"#fff",
+        fontFamily:"Formular-Medium",
+        fontSize:16,
+        position:"absolute",
+        top:15,
+        left:0
+    },
+    productScrollViewActivatedItem:{
+        width: windowWidth - 40,
+        height: 50,
+        marginLeft: 20,
+        marginBottom: 20,
+        borderRadius: 12,
+        backgroundColor: "#383838"
+    },
+    productScrollViewActivatedItemText:{
+        width: "100%",
+        textAlign: "center",
+        color: "#40A139",
+        fontFamily: "Formular-Medium",
+        fontSize: 16,
+        position: "absolute",
+        top: 15,
+        left: 0,
+        zIndex:100
     },
     notificationTitle:{
         width:"100%",

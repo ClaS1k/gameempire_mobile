@@ -20,21 +20,41 @@ import appConfig from "../appConfig";
 
 const ProfileScreen = ({ navigation }) => {
     const Navigation = () => {
+        const goNews = () => {
+            navigation.navigate("News");
+        }
+
+        const goSettings = () => {
+            navigation.navigate("Settings");
+        }
+
+        const goProfile = () => {
+            navigation.navigate("Profile");
+        }
+
+        const goQr = () => {
+            navigation.navigate("Qr");
+        }
+
+        const goHome = () => {
+            navigation.navigate("Home");
+        }
+
         return (
             <View style={navigation_styles.navigationBar}>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goNews}>
                     <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_news.png")} />
                 </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goSettings}>
                     <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
                 </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_home_highlighted.png")} />
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goHome}>
+                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_home.png")} />
                 </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_profile.png")} />
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goProfile}>
+                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_profile_highlighted.png")} />
                 </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goQr}>
                     <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_qr.png")} />
                 </TouchableOpacity>
             </View>

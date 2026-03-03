@@ -14,6 +14,7 @@ import QrScreen from "./screens/Qr";
 import ReservationsScreen from "./screens/Reservations";
 import HostmapScreen from "./screens/Hostmap";
 import ReviewsAuthScreen from "./screens/ReviewsAuth";
+import ReviewCreationScreen from "./screens/ReviewCreation";
 import TopUpScreen from "./screens/TopUp";
 import SettingsScreen from "./screens/Settings";
 
@@ -73,6 +74,10 @@ const App = () => {
         <Stack.Screen
           name="ReviewsAuth"
           component={ReviewsAuthScreen}
+        />
+        <Stack.Screen
+          name="ReviewCreation"
+          component={ReviewCreationScreen}
         />
         <Stack.Screen
           name="TopUp"

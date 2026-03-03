@@ -19,6 +19,12 @@ import * as Font from 'expo-font';
 import appConfig from "../appConfig";
 
 const TopUpScreen = ({ navigation }) => {
+    const [amount, setAmount] = useState("");
+
+    const getAmountValue = e => {
+        setAmount(e.nativeEvent.text.trim());
+    }
+
     const Header = () => {
         return(
             <View style={styles.header}>
@@ -27,22 +33,6 @@ const TopUpScreen = ({ navigation }) => {
                 <TouchableOpacity style={styles.headerButton}>
                     <Image style={styles.headerButtonIcon} source={require("../assets/images/icon_info.png")} />
                 </TouchableOpacity>
-            </View>
-        );
-    }
-
-    const AmountInput = () => {
-        return(
-            <View style={styles.amountInputContainer}>
-                <Text style={styles.amountInputContainerTitle}>Сумма пополнения:</Text>
-                <TextInput
-                    placeholderTextColor="rgba(173, 206, 255, 0.5)"
-                    keyboardType='numeric'
-                    style={styles.amountInput}
-                    placeholder="500"
-                    onChange={event => getLoginValue(event)}
-                />
-                <Image style={styles.amountInputSymbol} source={require("../assets/images/symbol_rouble.png")} />
             </View>
         );
     }
@@ -116,32 +106,65 @@ const TopUpScreen = ({ navigation }) => {
     }
     
     const Navigation = () => {
-        return (
-            <View style={navigation_styles.navigationBar}>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_news.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_home_highlighted.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_profile.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_qr.png")} />
-                </TouchableOpacity>
-            </View>
-        );
-    }
+           const goNews = () => {
+               navigation.navigate("News");
+           }
+   
+           const goSettings = () => {
+               navigation.navigate("Settings");
+           }
+   
+           const goProfile = () => {
+               navigation.navigate("Profile");
+           }
+   
+           const goQr = () => {
+               navigation.navigate("Qr");
+           }
+   
+           const goHome = () => {
+               navigation.navigate("Home");
+           }
+   
+           return (
+               <View style={navigation_styles.navigationBar}>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goNews}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_news.png")} />
+                   </TouchableOpacity>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goSettings}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
+                   </TouchableOpacity>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goHome}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_home_highlighted.png")} />
+                   </TouchableOpacity>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goProfile}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_profile.png")} />
+                   </TouchableOpacity>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goQr}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_qr.png")} />
+                   </TouchableOpacity>
+               </View>
+           );
+       }
 
     return (
         <View style={styles.background}>
             <StatusBar />
             <Header />
-            <AmountInput />
+
+            <View style={styles.amountInputContainer}>
+                <Text style={styles.amountInputContainerTitle}>Сумма пополнения:</Text>
+                <TextInput
+                    placeholderTextColor="rgba(173, 206, 255, 0.5)"
+                    keyboardType='numeric'
+                    style={styles.amountInput}
+                    placeholder="500"
+                    onChange={event => getAmountValue(event)}
+                    value={amount}
+                />
+                <Image style={styles.amountInputSymbol} source={require("../assets/images/symbol_rouble.png")} />
+            </View>
+
             <FastAmount />
             <Cashback />
             <PaymentMethodSelector />

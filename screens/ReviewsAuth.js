@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Text,
     View,
-    SafeAreaView,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Image,
@@ -14,52 +14,208 @@ import {
 } from 'react-native';
 
 import * as Font from 'expo-font';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import appConfig from "../appConfig";
 
-const ReviewsAuthScreen = ({ navigation }) => {
+const ReviewsAuthScreen = ({ navigation, route }) => {
+    const [userToken, setUserToken] = useState(false);
+    // false - токен еще не загружен или его нет
+    const [userId, setUserId] = useState(false);
+
+    const [isUserReviewCreated, setUserReviewCreated] = useState(true);
+    // определяет, оставлял-ли пользователь отзыв
+    // используется, чтоб определить, нужна-ли кнопка "Написать отзыв"
+    // по умолчанию true, чтоб не показывать кнопку раньше времени
+
+    const [reviewsList, setReviewsList] = useState(false);
+
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [profileLoading, setProfileLoading] = useState(false);
+    
+    const getProfile = () => {
+        setProfileLoading(true);
+
+        fetch(appConfig.apiAddress + "profile", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+
+                        setProfileLoading(false);
+                    } catch {
+                        setProfileLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let user_data = JSON.parse(text);
+                    user_data = user_data.data;
+
+                    setUserId(user_data.id);
+
+                    setProfileLoading(false);
+                });
+            }
+        });
+    }
+
+    const getReviews = () => {
+        setReviewsLoading(true);
+
+        fetch(appConfig.apiAddress + `reviews/place/${route.params.place_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setReviewsLoading(false);
+                    } catch {
+                        setReviewsLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let reviews_data = JSON.parse(text);
+                    
+                    setReviewsList(reviews_data.data);
+
+                    setReviewsLoading(false);
+                });
+            }
+        });
+    }
+
+    const goCreateReview = () => {
+        navigation.navigate("ReviewCreation", { place_id: route.params.place_id });
+    }
+
+    const ReviewCreationButton = () => {
+        return (<TouchableOpacity style={styles.reviewCreationButton} onPress={goCreateReview}>
+            <Image style={styles.reviewCreationButtonIcon} source={require("../assets/images/icon_review_creation.png")} />
+            <Text style={styles.reviewCreationButtonText}>Написать отзыв</Text>
+        </TouchableOpacity>);
+    }
+
     const Reviews = () => {
+        if (reviewsList === false || reviewsList === null || reviewsList === undefined || reviewsLoading){
+            return false;
+        }
+
         return(
             <ScrollView style={styles.reviewsContainer}>
-                <View style={styles.reviewContainer}>
-                    <Text style={styles.reviewAuthor}>Liberty</Text>
-                    <Text style={styles.reviewDate}>Оставлен 16.01.2025г</Text>
-                    <Text style={styles.reviewText}>Текст отзыва Владимира про компьютерный клуб, рястянутый на пару строк, чтоб проверить макет</Text>
-                    <View style={styles.reviewRate}>
-                        <Image style={styles.reviewRateIcon} source={require("../assets/images/icon_star.png")} />
-                        <Text style={styles.reviewRateValue}>5</Text>
-                    </View>
-                </View>
+                {!isUserReviewCreated ? <ReviewCreationButton /> : false}
+
+                {reviewsLoading ? <ActivityIndicator size="large" color="#fff" style={{ marginTop: "100" }} /> : reviewsList.map((review, index) => {
+                    let date = review.creation_date;
+                    date = date.split(" ");
+                    date = date[0].split("-");
+                    
+                    return (<View style={styles.reviewContainer} key={index}>
+                        <Text style={review.user.id == userId ? styles.reviewAuthorMe : styles.reviewAuthor}>{review.user.username}</Text>
+                        <Text style={styles.reviewDate}>Оставлен {`${date[2]}.${date[1]}.${date[0]}`}г</Text>
+                        <Text style={styles.reviewText}>{review.text}</Text>
+                        <View style={styles.reviewRate}>
+                            <Image style={styles.reviewRateIcon} source={require("../assets/images/icon_star.png")} />
+                            <Text style={styles.reviewRateValue}>{review.rate}</Text>
+                        </View>
+                    </View>);
+                })}
             </ScrollView>
         );
     }
 
     const Navigation = () => {
-        return (
-            <View style={navigation_styles.navigationBar}>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_news.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_home_highlighted.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_profile.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_qr.png")} />
-                </TouchableOpacity>
-            </View>
-        );
-    }
+           const goNews = () => {
+               navigation.navigate("News");
+           }
+   
+           const goSettings = () => {
+               navigation.navigate("Settings");
+           }
+   
+           const goProfile = () => {
+               navigation.navigate("Profile");
+           }
+   
+           const goQr = () => {
+               navigation.navigate("Qr");
+           }
+   
+           const goHome = () => {
+               navigation.navigate("Home");
+           }
+   
+           return (
+               <View style={navigation_styles.navigationBar}>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goNews}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_news.png")} />
+                   </TouchableOpacity>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goSettings}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
+                   </TouchableOpacity>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goHome}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_home_highlighted.png")} />
+                   </TouchableOpacity>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goProfile}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_profile.png")} />
+                   </TouchableOpacity>
+                   <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goQr}>
+                       <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_qr.png")} />
+                   </TouchableOpacity>
+               </View>
+           );
+       }
+
+    useEffect(() => {
+        AsyncStorage.getItem("TOKEN").then((value) => {
+            if (value !== null) {
+                setUserToken(value);
+            } else {
+                navigation.navigate("SignIn");
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        if (userToken !== false && userToken !== null) {
+            getProfile();
+            getReviews();
+        }
+    }, [userToken]);
+
+    useEffect(() => {
+        if(reviewsList === false || reviewsList === null || reviewsList === undefined){
+            return;
+        }
+
+        let is_user_review_created = false;
+
+        for (let i = 0; i < reviewsList.length; i++) {
+            if (reviewsList[i].user.id == userId) {
+                is_user_review_created = true;
+                break;
+            }
+        }
+
+        setUserReviewCreated(is_user_review_created);
+    }, [userId, reviewsList]);
 
     return (
         <View style={styles.background}>
             <StatusBar />
+
+            <Reviews />
 
             <Navigation />
         </View>
@@ -83,6 +239,31 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0
     },
+    reviewCreationButton:{
+        width: windowWidth - 40,
+        height: 50,
+        borderRadius: 12,
+        backgroundColor: "#2c2c2c",
+        marginBottom: 20,
+        marginLeft: 20
+    },
+    reviewCreationButtonIcon:{
+        width:36,
+        height:36,
+        position:"absolute",
+        top:7,
+        left:12
+    },
+    reviewCreationButtonText:{
+        width:"100%",
+        position:"absolute",
+        top:17,
+        left:0,
+        fontFamily:"Formular-Medium",
+        fontSize:14,
+        color:"#fff",
+        textAlign:"center"
+    },
     reviewContainer: {
         width: windowWidth - 40,
         height: "auto",
@@ -97,6 +278,13 @@ const styles = StyleSheet.create({
         marginTop: 7,
         marginLeft: 9,
         color: "#fff"
+    },
+    reviewAuthorMe:{
+        fontFamily: "Formular-Medium",
+        fontSize: 14,
+        marginTop: 7,
+        marginLeft: 9,
+        color: "#A915FF"
     },
     reviewDate: {
         fontFamily: "Formular-Medium",

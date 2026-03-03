@@ -101,7 +101,7 @@ const PlaceSelectorScreen = ({ navigation }) => {
                             uri: place.bg_file.adress
                         }} />
                         <View style={styles.placesItemWallpaperMask}></View>
-
+                        
                         <Text style={styles.placesItemName}>{place.name}</Text>
                         <Text style={styles.placesItemDescription}>{place.description}</Text>
                         <View style={styles.placesItemDistance}>
