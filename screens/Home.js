@@ -46,6 +46,7 @@ const HomeScreen = ({ navigation }) => {
     const [productsList, setProductsList] = useState(false);
 
     const [upcomingReservationsList, setUpcomingReservationsList] = useState(false);
+    const [hostgroupsList, setHostgroupsList] = useState(false);
 
     const [upcomingReservationVisible, setUpcomingReservationVisible] = useState(false);
     const [productsVisible, setProductsVisible] = useState(false);
@@ -58,6 +59,14 @@ const HomeScreen = ({ navigation }) => {
     const [actualNewsLoading, setActualNewsLoading] = useState(false);
     const [upcomingReservationsLoading, setUpcomingReservationsLoading] = useState(false);
     const [productsLoading, setProductsLoading] = useState(false);
+    const [hostgroupsLoading, setHostgroupsLoading] = useState(false);
+
+    // useState ниже этого комментария используются для управления PopUp'ами
+
+    const [tarrifsPopupTab, setTarrifsPopupTab] = useState("hostgroups");
+    // hostgroup или scheme
+    const [tarrifsPopuopSelectedHostgroup, setTarrifsPopuopSelectedHostgroup] = useState(0);
+    // 0 - группа не выбрана
 
     const modalPropsReservation = useMemo(() => ({
         animationType: "slide",
@@ -244,6 +253,38 @@ const HomeScreen = ({ navigation }) => {
                     }
 
                     setOnlineStatusLoading(false);
+                });
+            }
+        });
+    }
+
+    const getHostgroups = () => {
+        setHostgroupsLoading(true);
+
+        fetch(appConfig.apiAddress + "hosts/hostgroups", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setHostgroupsLoading(false);
+                    } catch {
+                        setHostgroupsLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let hostgroups_data = JSON.parse(text);
+                    hostgroups_data = hostgroups_data.data;
+
+                    setHostgroupsList(hostgroups_data);
+
+                    setHostgroupsLoading(false);
                 });
             }
         });
@@ -547,17 +588,32 @@ const HomeScreen = ({ navigation }) => {
         );
     }
 
+    const goNewsReader = (news_id) => {
+        navigation.navigate("NewsViewer", { news_id: news_id });
+    }
+
     const PinnedNews = () => {
+        const goNewsReader = (news_id) => {
+            navigation.navigate("NewsViewer", {news_id:news_id});
+        }
+        
         if (!actualNewsLoading && actualNewsId != 0){
+            let date = actualNewsDate;
+            date = date.split(" ");
+
+            date = date[0].split("-");
+
             return(
                 <View style={styles.pinnedNewsContainer}>
-                    <Image style={styles.pinnedNewsWallpaper} source={require("../assets/images/place_bg.png")} />
+                    <Image style={styles.pinnedNewsWallpaper} source={{
+                        uri: actualNewsImagePath
+                    }} />
                     <View style={styles.pinnedNewsWallpaperMask}>
-                        <Text style={styles.pinnedNewsTitle}>Обновленный список установленных игр</Text>
-                        <Text style={styles.pinnedNewsSubtitle}>Актуальный список предустановленных игр на наших ПК</Text>
-                        <Text style={styles.pinnedNewsDate}>14.01</Text>
+                        <Text style={styles.pinnedNewsTitle}>{actualNewsTitle}</Text>
+                        <Text style={styles.pinnedNewsSubtitle}>{actualNewsSubtitle}</Text>
+                        <Text style={styles.pinnedNewsDate}>{date[2]}.{date[1]}</Text>
     
-                        <TouchableOpacity style={styles.pinnedNewsReadBtn}>
+                        <TouchableOpacity style={styles.pinnedNewsReadBtn} onPress={() => goNewsReader(actualNewsId)}>
                             <Text style={styles.pinnedNewsReadBtnText}>Перейти</Text>
                         </TouchableOpacity>
                     </View>
@@ -574,7 +630,7 @@ const HomeScreen = ({ navigation }) => {
         setNotificationTitle(title);
         setNotificationText(text);
 
-        setNotificationVisible(!notificationVisible);
+        setNotificationVisible(true);
     }
 
     const NotificationPopup = () => {
@@ -777,6 +833,62 @@ const HomeScreen = ({ navigation }) => {
         )
     }
 
+    const TarrifsPopUpHostgroups = () => {
+        return (
+            <View style={styles.tarrifsPopupHostgroups}>
+                <ScrollView style={styles.tarrifsPopupHostgroupsList}>
+                    {(hostgroupsLoading || hostgroupsList === false || hostgroupsList === null || hostgroupsList === undefined) ? <ActivityIndicator size="large" color="#fff" style={{ marginTop: "100" }} /> : hostgroupsList.map((hostgroup, index) => {
+                        return (<TouchableOpacity key={index} style={styles.tarrifsPopupHostgroupsListItem} onPress={() => {
+                            setTarrifsPopupTab("scheme");
+                            setTarrifsPopuopSelectedHostgroup(hostgroup.id);
+                        }}>
+                            <Text style={styles.tarrifsPopupHostgroupsListItemText}>{hostgroup.name}</Text>
+                        </TouchableOpacity>);
+                    })}
+                </ScrollView>
+            </View>
+        );
+    }
+
+    const TarrifsPopUpScheme = () => {
+        return(
+            <View style={styles.tarrfsPopupScheme}>
+                <ScrollView style={styles.tarrifsPopupSchemeContainer}>
+                    <Text style={styles.tarrifsPopupSchemeTitle}>Будни</Text>
+                    <View style={styles.tarrifsPopupSchemeOption}>
+                        <Text style={styles.tarrifsPopupSchemeOptionName}>1 час</Text>
+                        <Text style={styles.tarrifsPopupSchemeOptionCost}>140 ₽</Text>
+                    </View>
+                    <View style={styles.tarrifsPopupSchemeOption}>
+                        <Text style={styles.tarrifsPopupSchemeOptionName}>3 часа</Text>
+                        <Text style={styles.tarrifsPopupSchemeOptionCost}>320 ₽</Text>
+                    </View>
+                    <View style={styles.tarrifsPopupSchemeOption}>
+                        <Text style={styles.tarrifsPopupSchemeOptionName}>5 часов</Text>
+                        <Text style={styles.tarrifsPopupSchemeOptionCost}>580 ₽</Text>
+                    </View>
+                    <Text style={styles.tarrifsPopupSchemeTitle}>Выходные</Text>
+                    <View style={styles.tarrifsPopupSchemeOption}>
+                        <Text style={styles.tarrifsPopupSchemeOptionName}>1 час</Text>
+                        <Text style={styles.tarrifsPopupSchemeOptionCost}>160 ₽</Text>
+                    </View>
+                    <View style={styles.tarrifsPopupSchemeOption}>
+                        <Text style={styles.tarrifsPopupSchemeOptionName}>3 часа</Text>
+                        <Text style={styles.tarrifsPopupSchemeOptionCost}>360 ₽</Text>
+                    </View>
+                    <View style={styles.tarrifsPopupSchemeOption}>
+                        <Text style={styles.tarrifsPopupSchemeOptionName}>5 часов</Text>
+                        <Text style={styles.tarrifsPopupSchemeOptionCost}>620 ₽</Text>
+                    </View>
+                </ScrollView>
+
+                <TouchableOpacity style={styles.tarrifsPopupSchemeContainerGoBack} onPress={() => setTarrifsPopupTab("hostgroups")}>
+                    <Text style={styles.tarrifsPopupSchemeContainerGoBackText}>Вернуться</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
     const TarrifsPopUp = () => {
         let touchY;
 
@@ -787,9 +899,17 @@ const HomeScreen = ({ navigation }) => {
                     onTouchEnd={e => {
                         if (touchY - e.nativeEvent.pageY < -50) {
                             setTarrifsVisible(false);
+                            setTarrifsPopupTab("hostgroups");
                         }
                     }}>
-                    <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => setTarrifsVisible(!tarrifsVisible)}>
+                    
+                    {tarrifsPopupTab === "hostgroups" ? <TarrifsPopUpHostgroups /> : false}
+                    {tarrifsPopupTab === "scheme" ? <TarrifsPopUpScheme /> : false}
+
+                    <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => {
+                        setTarrifsVisible(!tarrifsVisible);
+                        setTarrifsPopupTab("hostgroups");
+                    }}>
                         <Text style={styles.popupViewCloseButtonText}>Закрыть</Text>
                     </TouchableOpacity>
                 </View>
@@ -802,7 +922,7 @@ const HomeScreen = ({ navigation }) => {
             if (value !== null) {
                 setUserToken(value);
             } else {
-                navigation.navigate("SignIn");
+                navigation.navigate("PlaceSelector");
             }
         });
     }, []);
@@ -815,6 +935,7 @@ const HomeScreen = ({ navigation }) => {
             getActualNews();
             getOnline();
             getUpcomingReservations();
+            getHostgroups();
         }
     }, [userToken]);
 
@@ -1215,7 +1336,7 @@ const styles = StyleSheet.create({
         position:'absolute',
         left:0,
         top:15
-    },  
+    },
     reservationsPopupDate:{
         width:(windowWidth - 60) / 2,
         height: (windowWidth - 60) / 2,
@@ -1437,6 +1558,114 @@ const styles = StyleSheet.create({
         position:"absolute",
         left:20,
         top:60
+    },
+    tarrifsPopupHostgroups:{
+        width: "100%",
+        height: windowHeight - 200 - 90,
+        position: "absolute",
+        top: 0,
+        left: 0
+    },
+    tarrifsPopupHostgroupsList:{
+        width:"100%",
+        height:"100%",
+        position:"absolute",
+        top:0,
+        left:0,
+        paddingTop:20,
+    },
+    tarrfsPopupScheme:{
+        width: "100%",
+        height: windowHeight - 200 - 90,
+        position: "absolute",
+        top: 0,
+        left: 0
+    },
+    tarrifsPopupSchemeContainer:{
+        width: "100%",
+        height: windowHeight - 200 - 90 - 50 - 10,
+        position: "absolute",
+        top: 0,
+        left: 0,
+        paddingTop: 10,
+    },
+    tarrifsPopupSchemeContainerGoBack: {
+        width: windowWidth - 40,
+        height: 50,
+        position: "absolute",
+        bottom: 0,
+        left: 20,
+        borderRadius: 12,
+        backgroundColor: "#A915FF"
+    },
+    tarrifsPopupSchemeContainerGoBackText: {
+        width: "100%",
+        textAlign: "center",
+        color: "#fff",
+        fontFamily: "Formular-Bold",
+        position: 'absolute',
+        left: 0,
+        top: 15
+    }, 
+    tarrifsPopupHostgroups: {
+        width: "100%",
+        height: windowHeight - 200 - 90,
+        position: "absolute",
+        top: 0,
+        left: 0
+    },
+    tarrifsPopupHostgroupsListItem:{
+        width: windowWidth - 40,
+        height: 50,
+        marginLeft: 20,
+        marginBottom: 20,
+        borderRadius: 12,
+        backgroundColor: "#383838"
+    },
+    tarrifsPopupHostgroupsListItemText:{
+        width: "100%",
+        textAlign: "center",
+        color: "#fff",
+        fontFamily: "Formular-Medium",
+        fontSize: 16,
+        position: "absolute",
+        top: 15,
+        left: 0
+    },
+    tarrifsPopupSchemeTitle:{
+        width:"100%",
+        textAlign:"center",
+        fontFamily:"Formular-Bold",
+        fontSize:14,
+        marginTop:10,
+        marginLeft:0,
+        color:"#fff"
+    },
+    tarrifsPopupSchemeOption:{
+        width:windowWidth - 40,
+        height:12,
+        marginLeft:20,
+        marginTop:10
+    },
+    tarrifsPopupSchemeOptionName:{
+        width:"100%",
+        textAlign:"left",
+        fontFamily: "Formular-Medium",
+        fontSize: 12,
+        color:"#fff",
+        position:"absolute",
+        top:0,
+        left:0
+    },
+    tarrifsPopupSchemeOptionCost:{
+        width: "100%",
+        textAlign: "right",
+        fontFamily: "Formular-Medium",
+        fontSize: 12,
+        color: "#fff",
+        position:"absolute",
+        top:0,
+        left:0
     }
 });
 

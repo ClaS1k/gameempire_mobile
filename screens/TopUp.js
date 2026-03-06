@@ -145,7 +145,7 @@ const TopUpScreen = ({ navigation }) => {
                    </TouchableOpacity>
                </View>
            );
-       }
+    }
 
     return (
         <View style={styles.background}>

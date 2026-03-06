@@ -175,14 +175,14 @@ const ReviewsAuthScreen = ({ navigation, route }) => {
                    </TouchableOpacity>
                </View>
            );
-       }
+    }
 
     useEffect(() => {
         AsyncStorage.getItem("TOKEN").then((value) => {
             if (value !== null) {
                 setUserToken(value);
             } else {
-                navigation.navigate("SignIn");
+                navigation.navigate("PlaceSelector");
             }
         });
     }, []);

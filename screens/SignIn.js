@@ -99,7 +99,7 @@ const SignInScreen = ({ navigation, route }) => {
     }
 
     const goReviews = () => {
-        navigation.navigate("ReviewsUnauth");
+        navigation.navigate("ReviewsUnauth", { place_id: placeId });
     }
 
     const loadFonts = async () => {

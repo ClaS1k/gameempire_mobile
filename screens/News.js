@@ -14,26 +14,77 @@ import {
 } from 'react-native';
 
 import * as Font from 'expo-font';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import appConfig from "../appConfig";
 
 const NewsScreen = ({ navigation }) => {
+    const [userToken, setUserToken] = useState(false);
+    // false - токен еще не загружен или его нет
+
+    const [newsList, setNewsList] = useState(false);
+    
+    const [newsLoading, setNewsLoading] = useState(false);
+
+    const getNews = () => {
+        setNewsLoading(true);
+
+        fetch(appConfig.apiAddress + `news`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setNewsLoading(false);
+                    } catch {
+                        setNewsLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let news_data = JSON.parse(text);
+
+                    setNewsList(news_data.data);
+
+                    setNewsLoading(false);
+                });
+            }
+        });
+    }
+
+    const goNewsReader = (news_id) => {
+        navigation.navigate("NewsViewer", {news_id:news_id});
+    }
+
     const NewsList = () => {
         return(
             <ScrollView style={styles.newsContainer}>
-                <View style={styles.newsItem}>
-                    <Image style={styles.newsItemWallpaper} source={require("../assets/images/place_bg.png")} />
+                {(newsLoading || newsList === false || newsList === null || newsList === undefined) ? <ActivityIndicator size="large" color="#fff" style={{ marginTop: "100" }} /> : newsList.map((news, index) => {
+                    let date = news.creation_date;
+                    date = date.split(" ");
 
-                    <View style={styles.newsItemMask}>
-                        <Text style={styles.newsItemTitle}>Обновленный список установленных игр</Text>
-                        <Text style={styles.newsItemSubtitle}>Актуальный список предустановленных игр на наших ПК</Text>
-                        <Text style={styles.newsItemDate}>14.01</Text>
-                        <TouchableOpacity style={styles.newsItemReadButton}>
-                            <Text style={styles.newsItemReadButtonText}>Перейти</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                    date = date[0].split("-");
+
+                    return (<View key={index} style={styles.newsItem}>
+                        <Image style={styles.newsItemWallpaper} source={{
+                            uri: news.wallpaper_file.adress
+                        }} />
+
+                        <View style={styles.newsItemMask}>
+                            <Text style={styles.newsItemTitle}>{news.title}</Text>
+                            <Text style={styles.newsItemSubtitle}>{news.subtitle}</Text>
+                            <Text style={styles.newsItemDate}>{date[2]}.{date[1]}</Text>
+                            <TouchableOpacity style={styles.newsItemReadButton} onPress={() => goNewsReader(news.id)}>
+                                <Text style={styles.newsItemReadButtonText}>Перейти</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>);
+                })}
             </ScrollView>
         );
     }
@@ -79,6 +130,22 @@ const NewsScreen = ({ navigation }) => {
             </View>
         );
     }
+
+    useEffect(() => {
+        AsyncStorage.getItem("TOKEN").then((value) => {
+            if (value !== null) {
+                setUserToken(value);
+            } else {
+                navigation.navigate("PlaceSelector");
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        if (userToken !== false && userToken !== null) {
+            getNews();
+        }
+    }, [userToken]);
 
     return (
         <View style={styles.background}>

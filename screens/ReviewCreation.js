@@ -136,7 +136,7 @@ const ReviewCreationScreen = ({ navigation, route }) => {
             if (value !== null) {
                 setUserToken(value);
             } else {
-                navigation.navigate("SignIn");
+                navigation.navigate("PlaceSelector");
             }
         });
     }, []);

@@ -19,41 +19,67 @@ import * as Font from 'expo-font';
 
 import appConfig from "../appConfig";
 
-const ReviewsUnauthScreen = ({ navigation }) => {
+const ReviewsUnauthScreen = ({ navigation, route }) => {
+    const [reviewsList, setReviewsList] = useState(false);
+
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+
+    const getReviews = () => {
+        setReviewsLoading(true);
+
+        fetch(appConfig.apiAddress + `reviews/place/${route.params.place_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setReviewsLoading(false);
+                    } catch {
+                        setReviewsLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let reviews_data = JSON.parse(text);
+
+                    setReviewsList(reviews_data.data);
+
+                    setReviewsLoading(false);
+                });
+            }
+        });
+    }
+
     const goBack = () => {
-        navigation.navigate("SignIn");
+        navigation.navigate("SignIn", { place_id : route.params.place_id});
     }
 
     const Reviews = () => {
+        if (reviewsList === false || reviewsList === null || reviewsList === undefined || reviewsLoading){
+            return false;
+        }
+
         return(
             <ScrollView style={styles.reviewsContainer}>
-                <View style={styles.reviewContainer}>
-                    <Text style={styles.reviewAuthor}>Liberty</Text>
-                    <Text style={styles.reviewDate}>Оставлен 16.01.2025г</Text>
-                    <Text style={styles.reviewText}>Текст отзыва Владимира про компьютерный клуб, рястянутый на пару строк, чтоб проверить макет</Text>
-                    <View style={styles.reviewRate}>
-                        <Image style={styles.reviewRateIcon} source={require("../assets/images/icon_star.png")} />
-                        <Text style={styles.reviewRateValue}>5</Text>
-                    </View>
-                </View>
-                <View style={styles.reviewContainer}>
-                    <Text style={styles.reviewAuthor}>Liberty</Text>
-                    <Text style={styles.reviewDate}>Оставлен 16.01.2025г</Text>
-                    <Text style={styles.reviewText}>Текст отзыва Владимира про компьютерный клуб, рястянутый на пару строк, чтоб проверить макет</Text>
-                    <View style={styles.reviewRate}>
-                        <Image style={styles.reviewRateIcon} source={require("../assets/images/icon_star.png")} />
-                        <Text style={styles.reviewRateValue}>5</Text>
-                    </View>
-                </View>
-                <View style={styles.reviewContainer}>
-                    <Text style={styles.reviewAuthor}>Liberty</Text>
-                    <Text style={styles.reviewDate}>Оставлен 16.01.2025г</Text>
-                    <Text style={styles.reviewText}>Текст отзыва Владимира про компьютерный клуб, рястянутый на пару строк, чтоб проверить макет</Text>
-                    <View style={styles.reviewRate}>
-                        <Image style={styles.reviewRateIcon} source={require("../assets/images/icon_star.png")} />
-                        <Text style={styles.reviewRateValue}>5</Text>
-                    </View>
-                </View>
+                {reviewsLoading ? <ActivityIndicator size="large" color="#fff" style={{ marginTop: "100" }} /> : reviewsList.map((review, index) => {
+                    let date = review.creation_date;
+                    date = date.split(" ");
+                    date = date[0].split("-");
+                    
+                    return (<View style={styles.reviewContainer} key={index}>
+                        <Text style={styles.reviewAuthor}>{review.user.username}</Text>
+                        <Text style={styles.reviewDate}>Оставлен {`${date[2]}.${date[1]}.${date[0]}`}г</Text>
+                        <Text style={styles.reviewText}>{review.text}</Text>
+                        <View style={styles.reviewRate}>
+                            <Image style={styles.reviewRateIcon} source={require("../assets/images/icon_star.png")} />
+                            <Text style={styles.reviewRateValue}>{review.rate}</Text>
+                        </View>
+                    </View>);
+                })}
             </ScrollView>
         );
     }
@@ -65,6 +91,12 @@ const ReviewsUnauthScreen = ({ navigation }) => {
             </TouchableOpacity>
         );
     }
+
+    useEffect(() => {
+        if ((reviewsList === false || reviewsList === null || reviewsList === undefined) && !reviewsLoading) {
+            getReviews();
+        }
+    }, []);
 
     return (
         <View style={styles.background}>
