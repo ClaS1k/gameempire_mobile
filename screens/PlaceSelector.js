@@ -59,10 +59,6 @@ const PlaceSelectorScreen = ({ navigation }) => {
         navigation.navigate('SignIn', { place_id: place_id })
     }
 
-    const logmessage = () =>{
-        console.log("hello!")
-    }
-
     const loadFonts = async () => {
         await Font.loadAsync({
             'Formular': require('../assets/fonts/Formular.ttf'),
@@ -83,14 +79,6 @@ const PlaceSelectorScreen = ({ navigation }) => {
             }
         });
     }
-
-    useEffect(() => {
-        loadFonts();
-
-        autoLog();
-
-        getPlaces();
-    }, []);
 
     const PlacesList = () => {
         return (
@@ -119,20 +107,40 @@ const PlaceSelectorScreen = ({ navigation }) => {
     }
     
     const PlacesNavigation = () => {
+        const goPlaceList = () => {
+            navigation.navigate("PlaceSelector");
+        }
+
+        const goSettingsUnauth = () => {
+            navigation.navigate("SettingsUnauth");
+        }
+
+        const logmessage = () => {
+            Alert.alert("Внимание!", "Временно недоступно.");
+        }
+
         return (
             <View style={navigation_styles.navigationBar}>
-                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={logmessage}>
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goPlaceList}>
                     <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_list_highlighted.png")} />
                 </TouchableOpacity>
                 <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={logmessage}>
                     <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_map.png")} />
                 </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={logmessage}>
+                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goSettingsUnauth}>
                     <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
                 </TouchableOpacity>
             </View>
         );
     }
+
+    useEffect(() => {
+        loadFonts();
+
+        autoLog();
+
+        getPlaces();
+    }, []);
 
     return (
         <View style={styles.background}>
@@ -256,27 +264,27 @@ const styles = StyleSheet.create({
 
 const navigation_styles = StyleSheet.create({
     navigationBar: {
-        width: windowWidth - 50,
+        width: windowWidth - 40,
         height: 50,
         backgroundColor: "#2C2C2C",
         borderRadius: 12,
         position: "absolute",
         bottom: 25,
-        left: 25,
+        left: 20,
         display: "flex",
         flexDirection: "row",
         justifyContent: "space-evenly"
     },
     navigationBarButton: {
-        width: 40,
-        height: 40,
+        width: 34,
+        height: 34,
         display: "flex",
         flexDirection: "row",
-        marginTop: 5
+        marginTop: 8
     },
     navigationBarButtonIcon: {
-        width: 40,
-        height: 40
+        width: 34,
+        height: 34
     }
 });
 

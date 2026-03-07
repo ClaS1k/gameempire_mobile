@@ -60,6 +60,7 @@ const HomeScreen = ({ navigation }) => {
     const [upcomingReservationsLoading, setUpcomingReservationsLoading] = useState(false);
     const [productsLoading, setProductsLoading] = useState(false);
     const [hostgroupsLoading, setHostgroupsLoading] = useState(false);
+    const [disableHostLoading, setDisableHostLoading] = useState(false);
 
     // useState ниже этого комментария используются для управления PopUp'ами
 
@@ -358,6 +359,8 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const disableHost = () => {
+        setDisableHostLoading(true);
+
         fetch(appConfig.apiAddress + `hosts/logout`, {
             method: "POST",
             headers: {
@@ -367,6 +370,8 @@ const HomeScreen = ({ navigation }) => {
         }).then(res => {
             if (!res.ok) {
                 return res.text().then(text => {
+                    setDisableHostLoading(false);
+
                     try {
                         let error_data = JSON.parse(text);
                     } catch {
@@ -375,6 +380,7 @@ const HomeScreen = ({ navigation }) => {
                 });
             } else {
                 getOnline();
+                setDisableHostLoading(false);
             }
         });
     }
@@ -475,9 +481,13 @@ const HomeScreen = ({ navigation }) => {
 
                 {onlineHost == false ? <Text style={styles.placeContainerStatus}>Offline</Text> : <Text style={styles.placeContainerStatusOnline}>{onlineHost}, доступно {getUserTimeFormat()}</Text>}
 
-                {onlineHost == false ? false : <TouchableOpacity style={styles.placeContainerDisableHostBtn} onPress={disableHost}>
+                {onlineHost == false || disableHostLoading ? false : <TouchableOpacity style={styles.placeContainerDisableHostBtn} onPress={disableHost}>
                     <Image style={styles.placeContainerDisableHostIcon} source={require("../assets/images/icon_disable_host.png")} />
                 </TouchableOpacity>}
+
+                {!disableHostLoading ? false : <View style={styles.placeContainerDisableHostBtn} onPress={disableHost}>
+                    <ActivityIndicator size="large" color="#fff" style={{marginTop:2}} />
+                </View>}
 
                 <TouchableOpacity style={styles.placeContainerLogoutBtn} onPress={logOut}>
                     <Image style={styles.placeContainerLogoutIcon} source={require("../assets/images/icon_logout.png")} />
@@ -641,7 +651,7 @@ const HomeScreen = ({ navigation }) => {
                 <View style={styles.popupView}
                     onTouchStart={e => touchY = e.nativeEvent.pageY}
                     onTouchEnd={e => {
-                        if (touchY - e.nativeEvent.pageY < 20) {
+                        if (touchY - e.nativeEvent.pageY < -50) {
                             setNotificationVisible(false);
                         }
                     }}>
@@ -1671,13 +1681,13 @@ const styles = StyleSheet.create({
 
 const navigation_styles = StyleSheet.create({
     navigationBar: {
-        width: windowWidth - 50,
+        width: windowWidth - 40,
         height: 50,
         backgroundColor: "#2C2C2C",
         borderRadius: 12,
         position: "absolute",
         bottom: 25,
-        left: 25,
+        left: 20,
         display: "flex",
         flexDirection: "row",
         justifyContent: "space-evenly"

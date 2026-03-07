@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Text,
     View,
@@ -10,7 +10,8 @@ import {
     TextInput,
     ActivityIndicator,
     Dimensions,
-    Alert
+    Alert,
+    Modal
 } from 'react-native';
 
 import * as Font from 'expo-font';
@@ -19,6 +20,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import appConfig from "../appConfig";
 
 const SignInScreen = ({ navigation, route }) => {
+    const [notificationTitle, setNotificationTitle] = useState("Внимание!");
+    const [notificationText, setNotificationText] = useState("Сервисное сообщение.");
+
     const [placeId, setPlaceId] = useState("");
 
     const [userLogin, setUserLogin] = useState("");
@@ -26,6 +30,15 @@ const SignInScreen = ({ navigation, route }) => {
     const [autoLogin, setAutoLogin] = useState(true);
 
     const [authLoading, setAuthLoading] = useState(false);
+
+    const [notificationVisible, setNotificationVisible] = useState(false);
+
+    const modalPropsNotification = useMemo(() => ({
+        animationType: "slide",
+        transparent: true,
+        visible: notificationVisible,
+        onRequestClose: () => setNotificationVisible(false),
+    }), [notificationVisible]);
     
     const setAccountData = async (user_id, token, place_id, autologin) => {
         await AsyncStorage.setItem('USER_ID', user_id.toString());
@@ -51,6 +64,10 @@ const SignInScreen = ({ navigation, route }) => {
     }
 
     const auth = () => {
+        if (authLoading){
+            return;
+        }
+        
         setAuthLoading(true);
 
         let body = {
@@ -76,12 +93,9 @@ const SignInScreen = ({ navigation, route }) => {
                     try {
                         let response = JSON.parse(xhr.responseText);
 
-                        Alert.alert(response.message);
-                        // setErrorMessage(response.message);
+                        showNotificationPopup("Ошибка!", response.message);
                     } catch {
-                        Alert.alert("Неизвестная ошибка");
-
-                        // setErrorMessage("Неизвестная ошибка");
+                        showNotificationPopup("Ошибка!", "Неизвестная ошибка.");
                     }
                 }
 
@@ -91,7 +105,8 @@ const SignInScreen = ({ navigation, route }) => {
     }
 
     const signUp = () => {
-        navigation.navigate("SignUp");
+        showNotificationPopup("Внимание!", "Раздел отключен");
+        // navigation.navigate("SignUp");
     }
 
     const goSelection = () => {
@@ -100,6 +115,36 @@ const SignInScreen = ({ navigation, route }) => {
 
     const goReviews = () => {
         navigation.navigate("ReviewsUnauth", { place_id: placeId });
+    }
+
+    const showNotificationPopup = (title, text) => {
+        setNotificationTitle(title);
+        setNotificationText(text);
+
+        setNotificationVisible(true);
+    }
+
+    const NotificationPopup = () => {
+        let touchY;
+
+        return (
+            <Modal {...modalPropsNotification}>
+                <View style={styles.popupView}
+                    onTouchStart={e => touchY = e.nativeEvent.pageY}
+                    onTouchEnd={e => {
+                        if (touchY - e.nativeEvent.pageY < -50) {
+                            setNotificationVisible(false);
+                        }
+                    }}>
+                    <Text style={styles.notificationTitle}>{notificationTitle}</Text>
+                    <Text style={styles.notificationText}>{notificationText}</Text>
+
+                    <TouchableOpacity style={styles.popupViewCloseButton} onPress={() => setNotificationVisible(!notificationVisible)}>
+                        <Text style={styles.popupViewCloseButtonText}>Закрыть</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+        )
     }
 
     const loadFonts = async () => {
@@ -166,8 +211,10 @@ const SignInScreen = ({ navigation, route }) => {
                 <Text style={styles.createAccountLnk} onPress={signUp}>Создать аккаунт</Text>
 
                 <TouchableOpacity style={styles.signInButton} onPress={auth}>
-                    <Text style={styles.signInButtonText}>Войти</Text>
+                    {authLoading ? <ActivityIndicator size="small" color="#fff" style={{marginTop:15}} /> : <Text style={styles.signInButtonText}>Войти</Text>}
                 </TouchableOpacity>
+
+                <NotificationPopup />
             </View>
     );
 }
@@ -357,7 +404,65 @@ const styles = StyleSheet.create({
         left: 0,
         color: "#fff",
         textAlign: "center"
-    }
+    },
+    popupView: {
+        width: "100%",
+        height: windowHeight - 200,
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        backgroundColor: "#2C2C2C",
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12
+    },
+    popupViewTitle: {
+        width: "100%",
+        textAlign: "center",
+        fontFamily: "Formular-Medium",
+        fontSize: 20,
+        color: "#fff",
+        position: "absolute",
+        top: 20,
+        left: 0
+    },
+    popupViewCloseButton: {
+        width: windowWidth - 40,
+        height: 50,
+        position: "absolute",
+        bottom: 25,
+        left: 20,
+        borderRadius: 12,
+        backgroundColor: "#A915FF"
+    },
+    popupViewCloseButtonText: {
+        width: "100%",
+        textAlign: "center",
+        color: "#fff",
+        fontFamily: "Formular-Bold",
+        position: 'absolute',
+        left: 0,
+        top: 15
+    },
+    notificationTitle: {
+        width: "100%",
+        textAlign: "center",
+        fontFamily: "Formular-Medium",
+        fontSize: 18,
+        position: "absolute",
+        top: 10,
+        left: 0,
+        color: "#fff"
+    },
+    notificationText: {
+        width: windowWidth - 40,
+        height: windowHeight - 360,
+        textAlign: "center",
+        color: "#fff",
+        fontFamily: "Formular",
+        position: "absolute",
+        left: 20,
+        top: 60
+    },
 });
 
 export default SignInScreen

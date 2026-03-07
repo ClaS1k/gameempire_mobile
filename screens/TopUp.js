@@ -95,10 +95,14 @@ const TopUpScreen = ({ navigation }) => {
     }
 
     const PaymentButton = () => {
+        const onPress = () => {
+            Alert.alert("Внимание!", "Временно недоступно.");
+        }
+        
         return(
             <View style={styles.paymentButtonContainer}>
                 <Text style={styles.paymentButtonContainerText}>Баланс после пополнения: 129 ₽</Text>
-                <TouchableOpacity style={styles.paymentButton}>
+                <TouchableOpacity style={styles.paymentButton} onPress={onPress}>
                     <Text style={styles.paymentButtonText}>Оплатить</Text>
                 </TouchableOpacity>
             </View>

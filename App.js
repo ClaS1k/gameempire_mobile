@@ -3,9 +3,11 @@ import { NavigationContainer, useRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import PlaceSelectorScreen from "./screens/PlaceSelector";
+import SettingsUnauthScreen from "./screens/SettingsUnauth";
 import SignInScreen from "./screens/SignIn";
 import SignUpScreen from "./screens/SignUp";
 import ReviewsUnauthScreen from "./screens/ReviewsUnauth";
+import DocsViewerScreen from "./screens/DocsViewer";
 import HomeScreen from "./screens/Home";
 import NewsScreen from "./screens/News";
 import NewsViewerScreen from "./screens/NewsViewer";
@@ -17,6 +19,7 @@ import ReviewsAuthScreen from "./screens/ReviewsAuth";
 import ReviewCreationScreen from "./screens/ReviewCreation";
 import TopUpScreen from "./screens/TopUp";
 import SettingsScreen from "./screens/Settings";
+import DocsViewerAuthScreen from "./screens/DocsViewerAuth";
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +33,10 @@ const App = () => {
         <Stack.Screen
           name="PlaceSelector"
           component={PlaceSelectorScreen}
+        />
+        <Stack.Screen
+          name="SettingsUnauth"
+          component={SettingsUnauthScreen}
         />
         <Stack.Screen
           name="SignIn"
@@ -86,6 +93,14 @@ const App = () => {
         <Stack.Screen
           name="Settings"
           component={SettingsScreen}
+        />
+        <Stack.Screen
+          name="DocsViewer"
+          component={DocsViewerScreen}
+        />
+        <Stack.Screen
+          name="DocsViewerAuth"
+          component={DocsViewerAuthScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>
