@@ -18,17 +18,17 @@ import * as Font from 'expo-font';
 
 import appConfig from "../appConfig";
 
-const SignUpScreen = ({ navigation, route }) => {
+const SignUpCodeScreen = ({ navigation, route }) => {
     const [notificationTitle, setNotificationTitle] = useState("Внимание!");
     const [notificationText, setNotificationText] = useState("Сервисное сообщение.");
 
     const [placeId, setPlaceId] = useState(false);
 
-    const [emailValue, setEmailValue] = useState("");
+    const [codeValue, setCodeValue] = useState("");
 
     const [notificationVisible, setNotificationVisible] = useState(false);
 
-    const [sendCodeLoading, setSendCodeLoading] = useState(false);
+    const [checkCodeLoading, setCheckCodeLoading] = useState(false);
 
     const modalPropsNotification = useMemo(() => ({
         animationType: "slide",
@@ -37,31 +37,33 @@ const SignUpScreen = ({ navigation, route }) => {
         onRequestClose: () => setNotificationVisible(false),
     }), [notificationVisible]);
 
-    const goLogin = () => {
-        navigation.navigate("SignIn", {place_id:placeId})
+    const goBack = () => {
+        navigation.navigate("SignUp", {place_id:placeId})
     }
 
-    const sendCode = () => {
-        if (sendCodeLoading) {
+    const checkCode = () => {
+        if (checkCodeLoading) {
             return;
         }
 
-        setSendCodeLoading(true);
+        setCheckCodeLoading(true);
 
         let body = {
-            "email": emailValue,
+            "code": codeValue,
             "place_id": placeId
         }
 
         let xhr = new XMLHttpRequest();
-        let adress = encodeURI(appConfig.apiAddress + "signup/init");
+        let adress = encodeURI(appConfig.apiAddress + "signup/validate");
         xhr.open('POST', adress, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(JSON.stringify(body));
         xhr.onreadystatechange = async function () {
             if (xhr.readyState == 4) { 
                 if (xhr.status == 200) {
-                    navigation.navigate("SignUpCode", {place_id:placeId, email:emailValue})
+                    let response = JSON.parse(xhr.responseText);
+
+                    navigation.navigate("SignUpPersonal", { place_id: placeId, signup_token: response.data })
                 } else {
                     try {
                         let response = JSON.parse(xhr.responseText);
@@ -72,13 +74,13 @@ const SignUpScreen = ({ navigation, route }) => {
                     }
                 }
 
-                setSendCodeLoading(false);
+                setCheckCodeLoading(false);
             }
         }
     }
 
-    const getEmailValue = e => {
-        setEmailValue(e.nativeEvent.text.trim());
+    const getCodeValue = e => {
+        setCodeValue(e.nativeEvent.text.trim());
     }
 
     const showNotificationPopup = (title, text) => {
@@ -119,21 +121,21 @@ const SignUpScreen = ({ navigation, route }) => {
         <View style={{ backgroundColor: '#1E1E1E' }}>
             <StatusBar />
             <View style={styles.background}>
-                <Image style={styles.emailIcon} source={require("../assets/images/icon_email.png")} />
-                <Text style={styles.emailIconText}>На указанный email будет отправлено письмо с кодом подтверждения</Text>
+                <Image style={styles.codeIcon} source={require("../assets/images/icon_code.png")} />
+                <Text style={styles.codeIconText}>Введите код, отправленный на адрес {route.params.email}</Text>
 
-                <Text style={styles.emailInputTitle}>Адрес email</Text>
+                <Text style={styles.codeInputTitle}>Код подтверждения</Text>
                 <TextInput
                     placeholderTextColor="rgba(173, 206, 255, 0.5)"
-                    style={styles.emailInput}
-                    placeholder="example@mail.ru"
-                    onChange={event => getEmailValue(event)}
+                    style={styles.codeInput}
+                    placeholder="4512"
+                    onChange={event => getCodeValue(event)}
                 /> 
 
-                <Text style={styles.logInButton} onPress={goLogin}>Войти</Text>
+                <Text style={styles.goBackButton} onPress={goBack}>Вернуться</Text>
 
-                <TouchableOpacity style={styles.sendCodeButton} onPress={sendCode}>
-                    {sendCodeLoading ? <ActivityIndicator size="small" color="#fff" style={{marginTop:15}} /> : <Text style={styles.sendCodeButtonText}>Отправить код</Text>}
+                <TouchableOpacity style={styles.nextStepButton} onPress={checkCode}>
+                    {checkCodeLoading ? <ActivityIndicator size="small" color="#fff" style={{marginTop:15}} /> : <Text style={styles.nextStepButtonText}>Продолжить</Text>}
                 </TouchableOpacity>
 
                 <NotificationPopup />
@@ -151,14 +153,14 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: '#1E1E1E'
     },
-    emailIcon:{
+    codeIcon:{
         width:160, 
         height:160,
         position:"absolute",
         top:50,
         left:(windowWidth / 2) - 80
     },
-    emailIconText:{
+    codeIconText:{
         width:windowWidth - 40,
         position:"absolute",
         top:230,
@@ -168,7 +170,7 @@ const styles = StyleSheet.create({
         fontFamily:"Formular-Medium",
         fontSize:16
     },
-    emailInputTitle:{
+    codeInputTitle:{
         width:"100%",
         textAlign:"center",
         position:"absolute",
@@ -178,7 +180,7 @@ const styles = StyleSheet.create({
         fontFamily:"Formular-Medium",
         fontSize:14
     },
-    emailInput:{
+    codeInput:{
         width: windowWidth - 40,
         height: 40,
         fontFamily: "Formular",
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: "#fff"
     },
-    logInButton:{
+    goBackButton:{
         fontFamily: "Formular",
         fontSize: 14,
         color: "rgba(255,255,255, .8)",
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
         bottom: 95,
         left: (windowWidth / 2) - 100
     },
-    sendCodeButton:{
+    nextStepButton:{
         width: windowWidth - 40,
         height: 50,
         backgroundColor: "#A915FF",
@@ -210,7 +212,7 @@ const styles = StyleSheet.create({
         bottom: 25,
         left: 20
     },
-    sendCodeButtonText:{
+    nextStepButtonText:{
         width: "100%",
         fontFamily: 'Formular-Bold',
         fontSize: 18,
@@ -280,4 +282,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default SignUpScreen
+export default SignUpCodeScreen

@@ -105,8 +105,7 @@ const SignInScreen = ({ navigation, route }) => {
     }
 
     const signUp = () => {
-        showNotificationPopup("Внимание!", "Раздел отключен");
-        // navigation.navigate("SignUp");
+        navigation.navigate("SignUp", {place_id:placeId});
     }
 
     const goSelection = () => {
@@ -387,13 +386,13 @@ const styles = StyleSheet.create({
         left:(windowWidth / 2) - 100
     },
     signInButton: {
-        width: windowWidth - 50,
+        width: windowWidth - 40,
         height: 50,
         backgroundColor: "#A915FF",
         borderRadius: 12,
         position: "absolute",
         bottom: 25,
-        left: 25
+        left: 20
     },
     signInButtonText:{
         width:"100%",

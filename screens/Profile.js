@@ -74,7 +74,7 @@ const ProfileScreen = ({ navigation }) => {
             <View style={styles.profileContainer}>
                 <Image style={styles.profileTopIcon} source={require("../assets/images/icon_profile_big.png")} />
                 <Text style={styles.profileTopUsername}>{profileDataAvailable ? profileData.username : "-"}</Text>
-                <Text style={styles.profileTopPhone}>{(profileDataAvailable && (profileData.gizmo_data.phone != null)) ? profileData.gizmo_data.phone : "-"}</Text>
+                <Text style={styles.profileTopPhone}>{(profileDataAvailable && (profileData.gizmo_data.phone != null) && (profileData.gizmo_data.phone != "")) ? profileData.gizmo_data.phone : "Не указан"}</Text>
             </View>
         );
     }
@@ -90,10 +90,10 @@ const ProfileScreen = ({ navigation }) => {
         let user_service_id;
 
         if (profileDataAvailable){
-            user_email = profileData.gizmo_data.email == false ? "Не указано" : profileData.gizmo_data.email;
-            user_name = profileData.gizmo_data.firstName == false ? "Не указано" : profileData.gizmo_data.firstName;
-            user_surname = profileData.gizmo_data.lastName == false ? "Не указано" : profileData.gizmo_data.lastName;
-            user_birthdate = profileData.gizmo_data.birthDate == false ? "Не указано" : profileData.gizmo_data.birthDate;
+            user_email = profileData.gizmo_data.email == null ? "Не указано" : profileData.gizmo_data.email;
+            user_name = profileData.gizmo_data.firstName == null ? "Не указано" : profileData.gizmo_data.firstName;
+            user_surname = profileData.gizmo_data.lastName == null ? "Не указано" : profileData.gizmo_data.lastName;
+            user_birthdate = profileData.gizmo_data.birthDate == null ? "Не указано" : profileData.gizmo_data.birthDate;
             user_app_id = profileData.id;
             user_service_id = profileData.gizmo_id;
 

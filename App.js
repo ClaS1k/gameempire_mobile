@@ -6,6 +6,8 @@ import PlaceSelectorScreen from "./screens/PlaceSelector";
 import SettingsUnauthScreen from "./screens/SettingsUnauth";
 import SignInScreen from "./screens/SignIn";
 import SignUpScreen from "./screens/SignUp";
+import SignUpCodeScreen from "./screens/SignUpCode";
+import SignUpPersonalScreen from "./screens/SignUpPersonal";
 import ReviewsUnauthScreen from "./screens/ReviewsUnauth";
 import DocsViewerScreen from "./screens/DocsViewer";
 import HomeScreen from "./screens/Home";
@@ -45,6 +47,14 @@ const App = () => {
         <Stack.Screen
           name="SignUp"
           component={SignUpScreen}
+        />
+        <Stack.Screen
+          name="SignUpCode"
+          component={SignUpCodeScreen}
+        />
+        <Stack.Screen
+          name="SignUpPersonal"
+          component={SignUpPersonalScreen}
         />
         <Stack.Screen
           name="ReviewsUnauth"
