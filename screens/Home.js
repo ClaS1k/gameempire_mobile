@@ -47,6 +47,7 @@ const HomeScreen = ({ navigation }) => {
 
     const [upcomingReservationsList, setUpcomingReservationsList] = useState(false);
     const [hostgroupsList, setHostgroupsList] = useState(false);
+    const [pricelistData, setPricelistData] = useState(false);
 
     const [upcomingReservationVisible, setUpcomingReservationVisible] = useState(false);
     const [productsVisible, setProductsVisible] = useState(false);
@@ -60,6 +61,7 @@ const HomeScreen = ({ navigation }) => {
     const [upcomingReservationsLoading, setUpcomingReservationsLoading] = useState(false);
     const [productsLoading, setProductsLoading] = useState(false);
     const [hostgroupsLoading, setHostgroupsLoading] = useState(false);
+    const [pricelistLoading, setPricelistLoading] = useState(false);
     const [disableHostLoading, setDisableHostLoading] = useState(false);
 
     // useState ниже этого комментария используются для управления PopUp'ами
@@ -286,6 +288,38 @@ const HomeScreen = ({ navigation }) => {
                     setHostgroupsList(hostgroups_data);
 
                     setHostgroupsLoading(false);
+                });
+            }
+        });
+    }
+
+    const getPricelist = () => {
+        setPricelistLoading(true);
+
+        fetch(appConfig.apiAddress + "pricelist", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + userToken.trim()
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setPricelistLoading(false);
+                    } catch {
+                        setPricelistLoading(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let pricelist_data = JSON.parse(text);
+                    pricelist_data = pricelist_data.data;
+
+                    setPricelistData(pricelist_data);
+
+                    setPricelistLoading(false);
                 });
             }
         });
@@ -860,36 +894,40 @@ const HomeScreen = ({ navigation }) => {
         );
     }
 
+    const getPricelistByHostgroupId = (hostgroup_id) => {
+        if (pricelistData === false) {
+            // хосты не прогружены - возвращаем false
+            return false;
+        }  
+
+        for (let i = 0; i < pricelistData.length; i++) {
+
+            if (pricelistData[i].hostgroup_id == hostgroup_id) {
+                return pricelistData[i].scheme;
+            }
+        }
+
+        return pricelistData[0].scheme;
+    }
+
     const TarrifsPopUpScheme = () => {
+        let selected_hostgroup_scheme = getPricelistByHostgroupId(tarrifsPopuopSelectedHostgroup);
+
         return(
             <View style={styles.tarrfsPopupScheme}>
                 <ScrollView style={styles.tarrifsPopupSchemeContainer}>
-                    <Text style={styles.tarrifsPopupSchemeTitle}>Будни</Text>
-                    <View style={styles.tarrifsPopupSchemeOption}>
-                        <Text style={styles.tarrifsPopupSchemeOptionName}>1 час</Text>
-                        <Text style={styles.tarrifsPopupSchemeOptionCost}>140 ₽</Text>
-                    </View>
-                    <View style={styles.tarrifsPopupSchemeOption}>
-                        <Text style={styles.tarrifsPopupSchemeOptionName}>3 часа</Text>
-                        <Text style={styles.tarrifsPopupSchemeOptionCost}>320 ₽</Text>
-                    </View>
-                    <View style={styles.tarrifsPopupSchemeOption}>
-                        <Text style={styles.tarrifsPopupSchemeOptionName}>5 часов</Text>
-                        <Text style={styles.tarrifsPopupSchemeOptionCost}>580 ₽</Text>
-                    </View>
-                    <Text style={styles.tarrifsPopupSchemeTitle}>Выходные</Text>
-                    <View style={styles.tarrifsPopupSchemeOption}>
-                        <Text style={styles.tarrifsPopupSchemeOptionName}>1 час</Text>
-                        <Text style={styles.tarrifsPopupSchemeOptionCost}>160 ₽</Text>
-                    </View>
-                    <View style={styles.tarrifsPopupSchemeOption}>
-                        <Text style={styles.tarrifsPopupSchemeOptionName}>3 часа</Text>
-                        <Text style={styles.tarrifsPopupSchemeOptionCost}>360 ₽</Text>
-                    </View>
-                    <View style={styles.tarrifsPopupSchemeOption}>
-                        <Text style={styles.tarrifsPopupSchemeOptionName}>5 часов</Text>
-                        <Text style={styles.tarrifsPopupSchemeOptionCost}>620 ₽</Text>
-                    </View>
+                    {selected_hostgroup_scheme == false ? false : selected_hostgroup_scheme.map((item, index) => {
+                        if(item.type == "title"){
+                            return (<Text key={index} style={styles.tarrifsPopupSchemeTitle}>{item.text}</Text>);
+                        }   
+
+                        if(item.type == "option"){
+                            return (<View key={index} style={styles.tarrifsPopupSchemeOption}>
+                                <Text style={styles.tarrifsPopupSchemeOptionName}>{item.text}</Text>
+                                <Text style={styles.tarrifsPopupSchemeOptionCost}>{item.value}</Text>
+                            </View>);
+                        }
+                    })}
                 </ScrollView>
 
                 <TouchableOpacity style={styles.tarrifsPopupSchemeContainerGoBack} onPress={() => setTarrifsPopupTab("hostgroups")}>
@@ -945,6 +983,7 @@ const HomeScreen = ({ navigation }) => {
             getActualNews();
             getOnline();
             getUpcomingReservations();
+            getPricelist();
             getHostgroups();
         }
     }, [userToken]);

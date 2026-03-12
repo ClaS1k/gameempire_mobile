@@ -18,13 +18,48 @@ import {
 
 import * as Font from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { YamapInstance, Yamap, Marker } from 'react-native-yamap-plus';
 
 import appConfig from "../appConfig";
 
 const PlaceSelectorScreen = ({ navigation }) => {
+    const [yamapsToken, setYamapsToken] = useState(false);
+
     const [placesList, setPlacesLists] = useState([]);
 
     const [placesLoading, setPlacesLoading] = useState(false);
+    const [yamapsTokenLoading, setYamapsTokenLoding] = useState(false);
+    
+    const [selectedTab, setSelectedTab] = useState("List");
+
+    const getYamapsToken = () => {
+        setYamapsTokenLoding(true);
+
+        fetch(appConfig.apiAddress + "service/map/token", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then(res => {
+            if (!res.ok) {
+                return res.text().then(text => {
+                    try {
+                        let error_data = JSON.parse(text);
+                        setYamapsTokenLoding(false);
+                    } catch {
+                        setYamapsTokenLoding(false);
+                    }
+                });
+            } else {
+                return res.text().then(text => {
+                    let token_data = JSON.parse(text);
+
+                    setYamapsToken(token_data.data);
+                    setYamapsTokenLoding(false);
+                });
+            }
+        });
+    }
 
     const getPlaces = () => {
         setPlacesLoading(true);
@@ -105,33 +140,90 @@ const PlaceSelectorScreen = ({ navigation }) => {
             </ScrollView>
         );
     }
+
+    const PlacesMap = () => {
+        let lat;
+        let lon;
+
+        if(placesList.length == 0){
+            lat = 55;
+            lon = 37;
+        }else{
+            lat = Number(placesList[0].lat);
+            lon = Number(placesList[0].lon);
+        }
+
+        return(
+            <View style={styles.mapView}>
+                <Yamap
+                    nightMode={true}
+                    initialRegion={{
+                        lat: lat,
+                        lon: lon,
+                        zoom: 8,
+                        azimuth: 70,
+                        tilt: 50
+                    }}
+                    style={{ flex: 1 }}
+                >
+                    {placesLoading ? false : placesList.map((place, index) => {
+                        return (<Marker key={index} style={{ width: 20, height: 20 }} point={{ lat: Number(place.lat), lon: Number(place.lon) }} source={{ uri: place.logo_file.adress }} onPress={() => { selectPlace(place.id) }} scale={.5}></Marker>);
+                    })}
+                </Yamap>
+            </View>
+        );
+    }
     
     const PlacesNavigation = () => {
         const goPlaceList = () => {
-            navigation.navigate("PlaceSelector");
+            setSelectedTab("List");
         }
 
         const goSettingsUnauth = () => {
             navigation.navigate("SettingsUnauth");
         }
 
-        const logmessage = () => {
-            Alert.alert("Внимание!", "Временно недоступно.");
+        const goMaps = () => {
+            let yamapsNotReady = (yamapsToken === false || yamapsToken === null || yamapsToken === undefined || yamapsTokenLoading);
+            let placesNotRady = (placesList === false || placesList === null || placesList === undefined || placesLoading);
+
+            if (yamapsNotReady || placesNotRady){
+                Alert.alert("Внимание!", "Подождите немного, карты загружаются...");
+                return;
+            }
+
+            setSelectedTab("Map");
         }
 
-        return (
-            <View style={navigation_styles.navigationBar}>
-                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goPlaceList}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_list_highlighted.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={logmessage}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_map.png")} />
-                </TouchableOpacity>
-                <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goSettingsUnauth}>
-                    <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
-                </TouchableOpacity>
-            </View>
-        );
+        if(selectedTab == "List"){
+            return (
+                <View style={navigation_styles.navigationBar}>
+                    <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goPlaceList}>
+                        <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_list_highlighted.png")} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goMaps}>
+                        <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_map.png")} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goSettingsUnauth}>
+                        <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
+                    </TouchableOpacity>
+                </View>
+            );
+        }else{
+            return (
+                <View style={navigation_styles.navigationBar}>
+                    <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goPlaceList}>
+                        <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_list.png")} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goMaps}>
+                        <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_map_highlighted.png")} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={navigation_styles.navigationBarButton} onPress={goSettingsUnauth}>
+                        <Image style={navigation_styles.navigationBarButtonIcon} source={require("../assets/images/icon_settings.png")} />
+                    </TouchableOpacity>
+                </View>
+            );
+        }
     }
 
     useEffect(() => {
@@ -139,14 +231,25 @@ const PlaceSelectorScreen = ({ navigation }) => {
 
         autoLog();
 
+
+        getYamapsToken();
         getPlaces();
     }, []);
+
+    useEffect(() => {
+        if (yamapsToken !== false && yamapsToken !== null && yamapsToken !== undefined){
+            YamapInstance.init(yamapsToken);
+        }
+    }, [yamapsToken]);
 
     return (
         <View style={styles.background}>
             <StatusBar />
 
-            <PlacesList />
+            <Text>Hello!!!</Text>
+
+            {selectedTab == "List" ? <PlacesList /> : false}
+            {selectedTab == "Map" ? <PlacesMap /> : false}
             
             <PlacesNavigation />
         </View>
@@ -161,6 +264,13 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         backgroundColor: '#1E1E1E'
+    },
+    mapView:{
+        width:"100%",
+        height:"100%",
+        position:"absolute",
+        top:0,
+        left:0
     },
     placesScrollView:{
         width:"100%",

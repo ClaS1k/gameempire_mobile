@@ -209,9 +209,7 @@ const SignUpPersonalScreen = ({ navigation, route }) => {
                             {userAgreementChecked ? <Image style={styles.privacyPolicyCheckboxIcon} source={require("../assets/images/checkbox_checked.png")} /> : <Image style={styles.privacyPolicyCheckboxIcon} source={require("../assets/images/checkbox_unchecked.png")} />} 
                         </TouchableOpacity>
                     </View>
-                </ScrollView>
-
-                 
+                </ScrollView>                 
 
                 <Text style={styles.goBackButton} onPress={goBack}>В начало</Text>
 
